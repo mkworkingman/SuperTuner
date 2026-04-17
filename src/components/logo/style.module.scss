@@ -1,0 +1,24 @@
+.base {
+    position: relative;
+
+    &::before,
+    &::after {
+        content: attr(data-text);
+        font-weight: 800;
+        font-size: 2.5rem;
+    }
+
+    &::before {
+        position: absolute;
+        inset: -0.125rem 0 0 -0.125rem;
+        color: #111111;
+    }
+
+    &::after {
+        background-image: linear-gradient(to right, #0891b2, #a855f7);
+        -webkit-background-clip: text;
+        -moz-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+}
