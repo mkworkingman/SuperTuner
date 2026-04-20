@@ -13,43 +13,74 @@ export default function TransitionProvider({ children }: { children: ReactNode }
 
     const handleLeave = contextSafe((next: () => void, to: string = '/') => {
         const targetColor = PAGE_BACKGROUNDS[to]
+        const mm = gsap.matchMedia()
 
-        const tl = gsap.timeline({
-            onComplete: next,
-        })
-
-        tl.to(
-            '.backgroundElement',
+        mm.add(
             {
-                backgroundColor: targetColor,
-                duration: 0.3,
-                ease: 'power2.inOut',
+                reduceMotion: '(prefers-reduced-motion: reduce)',
+                doMotion: '(prefers-reduced-motion: no-preference)',
             },
-            0,
-        )
+            (context) => {
+                const { reduceMotion } = context.conditions as { reduceMotion: boolean }
 
-        tl.to(
-            '.childrenWrapper',
-            {
-                opacity: 0,
-                y: -20,
-                duration: 0.3,
-                ease: 'power2.in',
+                if (reduceMotion) {
+                    gsap.set('.backgroundElement', { backgroundColor: targetColor })
+                    next()
+                } else {
+                    const tl = gsap.timeline({ onComplete: next })
+
+                    tl.to(
+                        '.backgroundElement',
+                        {
+                            backgroundColor: targetColor,
+                            duration: 0.3,
+                            ease: 'power2.inOut',
+                        },
+                        0,
+                    )
+
+                    tl.to(
+                        '.childrenWrapper',
+                        {
+                            opacity: 0,
+                            y: -20,
+                            duration: 0.3,
+                            ease: 'power2.in',
+                        },
+                        0,
+                    )
+                }
             },
-            0,
         )
     })
 
     const handleEnter = contextSafe((next: () => void) => {
-        gsap.fromTo(
-            '.childrenWrapper',
-            { opacity: 0, y: 20 },
+        const mm = gsap.matchMedia()
+
+        mm.add(
             {
-                opacity: 1,
-                y: 0,
-                duration: 0.3,
-                ease: 'power2.out',
-                onComplete: next,
+                reduceMotion: '(prefers-reduced-motion: reduce)',
+                doMotion: '(prefers-reduced-motion: no-preference)',
+            },
+            (context) => {
+                const { reduceMotion } = context.conditions as { reduceMotion: boolean }
+
+                if (reduceMotion) {
+                    gsap.set('.childrenWrapper', { opacity: 1, y: 0 })
+                    next()
+                } else {
+                    gsap.fromTo(
+                        '.childrenWrapper',
+                        { opacity: 0, y: 20 },
+                        {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.3,
+                            ease: 'power2.out',
+                            onComplete: next,
+                        },
+                    )
+                }
             },
         )
     })
