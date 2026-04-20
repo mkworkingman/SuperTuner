@@ -12,10 +12,10 @@ const linkStyle = 'px-6 py-2 my-2 rounded-full relative'
 
 export default function Home() {
     return (
-        <div className="flex flex-col min-h-svh">
-            <header className="flex-grow flex flex-col justify-center items-center">
+        <div className="flex min-h-svh flex-col">
+            <header className="flex flex-grow flex-col items-center justify-center">
                 <Logo />
-                <nav className="grid grid-cols-1 w-fit text-center">
+                <nav className="grid w-fit grid-cols-1 text-center">
                     {NAV_LINKS.map((link) => (
                         <Link
                             key={link.href}
@@ -33,7 +33,7 @@ export default function Home() {
                 <h1>Welcome to SuperTuner!</h1>
             </main>
 
-            <footer className="text-center py-2">Footer</footer>
+            <footer className="py-2 text-center">Footer</footer>
         </div>
     )
 }

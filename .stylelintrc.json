@@ -1,0 +1,13 @@
+{
+    "extends": ["stylelint-config-standard-scss", "stylelint-config-recess-order"],
+    "rules": {
+        "order/order": [
+            "dollar-variables",
+            "custom-properties",
+            "at-rules",
+            "declarations",
+            "rules",
+            "at-rules"
+        ]
+    }
+}

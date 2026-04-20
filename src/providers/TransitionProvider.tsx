@@ -8,9 +8,8 @@ import { useGSAP } from '@gsap/react'
 
 export default function TransitionProvider({ children }: { children: ReactNode }) {
     const pathname = usePathname()
-    const bgRef = useRef<HTMLDivElement>(null)
-    const childrenWrapperRef = useRef<HTMLDivElement>(null)
-    const { contextSafe } = useGSAP({ scope: bgRef })
+    const containerRef = useRef<HTMLDivElement>(null)
+    const { contextSafe } = useGSAP({ scope: containerRef })
 
     const handleLeave = contextSafe((next: () => void, to: string = '/') => {
         const targetColor = PAGE_BACKGROUNDS[to]
@@ -20,7 +19,7 @@ export default function TransitionProvider({ children }: { children: ReactNode }
         })
 
         tl.to(
-            bgRef.current,
+            '.backgroundElement',
             {
                 backgroundColor: targetColor,
                 duration: 0.3,
@@ -30,7 +29,7 @@ export default function TransitionProvider({ children }: { children: ReactNode }
         )
 
         tl.to(
-            childrenWrapperRef.current,
+            '.childrenWrapper',
             {
                 opacity: 0,
                 y: -20,
@@ -43,7 +42,7 @@ export default function TransitionProvider({ children }: { children: ReactNode }
 
     const handleEnter = contextSafe((next: () => void) => {
         gsap.fromTo(
-            childrenWrapperRef.current,
+            '.childrenWrapper',
             { opacity: 0, y: 20 },
             {
                 opacity: 1,
@@ -61,14 +60,15 @@ export default function TransitionProvider({ children }: { children: ReactNode }
             leave={(next, from, to) => handleLeave(next, to)}
             enter={(next) => handleEnter(next)}
         >
-            <div
-                ref={bgRef}
-                style={{
-                    backgroundColor: PAGE_BACKGROUNDS[pathname],
-                }}
-                className="min-h-full overflow-hidden"
-            >
-                <div ref={childrenWrapperRef}>{children}</div>
+            <div ref={containerRef}>
+                <div
+                    style={{
+                        backgroundColor: PAGE_BACKGROUNDS[pathname],
+                    }}
+                    className="backgroundElement min-h-full overflow-hidden"
+                >
+                    <div className="childrenWrapper">{children}</div>
+                </div>
             </div>
         </TransitionRouter>
     )

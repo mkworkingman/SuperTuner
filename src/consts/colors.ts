@@ -4,4 +4,4 @@ export const PAGE_BACKGROUNDS: Record<string, string> = {
     '/guess': '#eab308',
     '/metronome': '#4ade80',
     '/about': '#9d174d',
-};
+}
