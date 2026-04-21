@@ -96,9 +96,9 @@ export default function TransitionProvider({ children }: { children: ReactNode }
                     style={{
                         backgroundColor: PAGE_BACKGROUNDS[pathname],
                     }}
-                    className="backgroundElement min-h-full overflow-hidden"
+                    className="backgroundElement min-h-svh overflow-hidden"
                 >
-                    <div className="childrenWrapper">{children}</div>
+                    <div className="childrenWrapper min-h-svh">{children}</div>
                 </div>
             </div>
         </TransitionRouter>
