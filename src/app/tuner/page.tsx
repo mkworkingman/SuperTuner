@@ -12,6 +12,7 @@ export default function Tuner() {
 
     const audioContextRef = useRef<AudioContext | null>(null)
     const analyserRef = useRef<AnalyserNode | null>(null)
+    const streamRef = useRef<MediaStream | null>(null)
     const requestRef = useRef<number | null>(null)
 
     useEffect(() => {
@@ -20,6 +21,7 @@ export default function Tuner() {
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current)
             if (audioContextRef.current) audioContextRef.current.close()
+            if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop())
         }
     }, [])
 
@@ -42,6 +44,7 @@ export default function Tuner() {
         source.connect(analyser)
 
         audioContextRef.current = audioContext
+        streamRef.current = stream
         analyserRef.current = analyser
 
         const buffer = new Float32Array(analyser.fftSize)
