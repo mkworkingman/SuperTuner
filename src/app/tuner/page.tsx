@@ -3,12 +3,20 @@ import Link from 'next/link'
 import init, { detect_pitch } from '@/wasm/wasm_study'
 import { useEffect, useRef, useState } from 'react'
 
+type note = {
+    name: string
+    octave: number
+    centsOff: number
+    frequency: string
+    targetFrequency: string
+    color: string
+} | null
+
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 export default function Tuner() {
     const [isReady, setIsReady] = useState(false)
-    const [frequency, setFrequency] = useState(0)
-    const [note, setNote] = useState('-')
+    const [note, setNote] = useState<note>(null)
 
     const audioContextRef = useRef<AudioContext | null>(null)
     const analyserRef = useRef<AnalyserNode | null>(null)
@@ -25,13 +33,27 @@ export default function Tuner() {
         }
     }, [])
 
-    const getNoteInfo = (freq: number) => {
-        if (freq <= 0) return '-'
-        const p = 69 + 12 * Math.log2(freq / 440)
+    const getNoteInfo = (frequency: number): note => {
+        if (frequency <= 0) return null
+        const A4 = 440 // TODO: should be customizable
+        const p = 69 + 12 * Math.log2(frequency / A4)
         const nearestStep = Math.round(p)
-        const name = NOTES[nearestStep % 12]
+        const name = NOTES[((nearestStep % 12) + 12) % 12]
         const octave = Math.floor(nearestStep / 12) - 1
-        return `${name}${octave}`
+
+        const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
+        const centsOff = Math.floor(1200 * Math.log2(frequency / targetFrequency))
+        const absCentsOff = Math.abs(centsOff)
+        const color = absCentsOff <= 5 ? 'green' : absCentsOff <= 15 ? 'yellow' : 'red' // TODO: pick normal colors in right format, not precreated by browser; also, maybe different range
+
+        return {
+            name,
+            octave,
+            centsOff,
+            frequency: `${frequency.toFixed(2)} Hz`,
+            targetFrequency: `${targetFrequency.toFixed(2)} Hz`,
+            color,
+        }
     }
 
     const startAudio = async () => {
@@ -54,14 +76,13 @@ export default function Tuner() {
             const freq = detect_pitch(buffer, audioContext.sampleRate)
 
             if (freq > 0) {
-                setFrequency(freq)
                 setNote(getNoteInfo(freq))
             }
 
             requestRef.current = requestAnimationFrame(tick)
         }
 
-        tick()
+        tick() // TODO: make it less frequent than 60fps
     }
 
     return (
@@ -81,8 +102,13 @@ export default function Tuner() {
                     </button>
 
                     <div className="mt-4">
-                        <p className="font-mono text-3xl">{frequency.toFixed(2)} Hz</p>
-                        <p className="text-5xl font-bold text-blue-600">{note}</p>
+                        <p className="font-mono text-3xl">{note?.frequency}</p>
+                        <p className="text-5xl font-bold" style={{ color: note?.color }}>
+                            {note?.name}
+                            {note?.octave}
+                        </p>
+                        <p>Target: {note?.targetFrequency}</p>
+                        <p>centsOff: {note?.centsOff}</p>
                     </div>
                 </div>
             )}
