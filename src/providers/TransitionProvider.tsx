@@ -2,7 +2,7 @@
 import { usePathname } from 'next/navigation'
 import { ReactNode, useRef } from 'react'
 import { TransitionRouter } from 'next-transition-router'
-import { PAGE_BACKGROUNDS } from '@/consts/colors'
+import { PAGE_BACKGROUNDS } from '@/consts'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import init, { detect_pitch } from '@/wasm/wasm_study'
+import { NoteSystem, AccidentalMode } from '@/types'
+import { NOTE_SYSTEMS } from '@/consts'
 
 type NoteInfo = {
     name: string
@@ -10,24 +12,23 @@ type NoteInfo = {
     color: string
 } | null
 
-const NOTE_SYSTEMS = {
-    english: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
-    german: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'],
-    solfege: ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'],
-} as const //TODO: Sharps vs Flats
-
-type NoteSystem = keyof typeof NOTE_SYSTEMS
-
-export function useTuner(A4: number = 440, system: NoteSystem = 'english') {
+// TODO: switcher does not work for now
+export function useTuner(
+    A4: number = 440,
+    system: NoteSystem = 'english',
+    accidental: AccidentalMode = 'sharps',
+) {
     const [isReady, setIsReady] = useState(false)
     const [note, setNote] = useState<NoteInfo>(null)
 
-    const audioContextRef = useRef<AudioContext | null>(null)
-    const analyserRef = useRef<AnalyserNode | null>(null)
-    const streamRef = useRef<MediaStream | null>(null)
-    const requestRef = useRef<number | null>(null)
+    const audioContextRef = useRef<AudioContext>(null)
+    const analyserRef = useRef<AnalyserNode>(null)
+    const streamRef = useRef<MediaStream>(null)
+    const requestRef = useRef<number>(null)
 
-    const notesNames = useMemo(() => NOTE_SYSTEMS[system], [system])
+    const notesNames = useMemo(() => NOTE_SYSTEMS[system][accidental], [system, accidental])
+
+    const settingsRef = useRef({ A4, notesNames })
 
     useEffect(() => {
         init().then(() => setIsReady(true))
@@ -39,8 +40,13 @@ export function useTuner(A4: number = 440, system: NoteSystem = 'english') {
         }
     }, [])
 
+    useEffect(() => {
+        settingsRef.current = { A4, notesNames }
+    }, [A4, notesNames])
+
     const getNoteInfo = (frequency: number): NoteInfo => {
         if (frequency <= 0) return null
+
         const p = 69 + 12 * Math.log2(frequency / A4)
         const nearestStep = Math.round(p)
         const name = notesNames[((nearestStep % 12) + 12) % 12]
