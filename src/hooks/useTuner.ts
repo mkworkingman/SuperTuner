@@ -68,36 +68,40 @@ export function useTuner(A4: number = 440, system: NoteSystem = 'english') {
     const startAudio = async () => {
         if (audioContextRef.current) return
 
-        const audioContext = new (
-            window.AudioContext ||
-            (window as typeof window & { webkitAudioContext: typeof AudioContext })
-                .webkitAudioContext
-        )()
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        const source = audioContext.createMediaStreamSource(stream)
-        const analyser = audioContext.createAnalyser()
+        try {
+            const audioContext = new (
+                window.AudioContext ||
+                (window as typeof window & { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext
+            )()
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const source = audioContext.createMediaStreamSource(stream)
+            const analyser = audioContext.createAnalyser()
 
-        analyser.fftSize = 8192
-        source.connect(analyser)
+            analyser.fftSize = 8192
+            source.connect(analyser)
 
-        audioContextRef.current = audioContext
-        streamRef.current = stream
-        analyserRef.current = analyser
+            audioContextRef.current = audioContext
+            streamRef.current = stream
+            analyserRef.current = analyser
 
-        const buffer = new Float32Array(analyser.fftSize)
+            const buffer = new Float32Array(analyser.fftSize)
 
-        const tick = () => {
-            analyser.getFloatTimeDomainData(buffer)
-            const freq = detect_pitch(buffer, audioContext.sampleRate)
+            const tick = () => {
+                analyser.getFloatTimeDomainData(buffer)
+                const freq = detect_pitch(buffer, audioContext.sampleRate)
 
-            if (freq > 0) {
-                setNote(getNoteInfo(freq))
+                if (freq > 0) {
+                    setNote(getNoteInfo(freq))
+                }
+
+                requestRef.current = requestAnimationFrame(tick)
             }
 
-            requestRef.current = requestAnimationFrame(tick)
+            tick() // TODO: make it less frequent than 60fps
+        } catch (err) {
+            console.log('Error with microphone', err)
         }
-
-        tick() // TODO: make it less frequent than 60fps
     }
 
     return { isReady, note, startAudio }
