@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import init, { detect_pitch } from '@/wasm/wasm_study'
 
 type NoteInfo = {
@@ -39,31 +39,28 @@ export function useTuner(A4: number = 440, system: NoteSystem = 'english') {
         }
     }, [])
 
-    const getNoteInfo = useCallback(
-        (frequency: number): NoteInfo => {
-            if (frequency <= 0) return null
-            const p = 69 + 12 * Math.log2(frequency / A4)
-            const nearestStep = Math.round(p)
-            const name = notesNames[((nearestStep % 12) + 12) % 12]
-            const octave = Math.floor(nearestStep / 12) - 1
+    const getNoteInfo = (frequency: number): NoteInfo => {
+        if (frequency <= 0) return null
+        const p = 69 + 12 * Math.log2(frequency / A4)
+        const nearestStep = Math.round(p)
+        const name = notesNames[((nearestStep % 12) + 12) % 12]
+        const octave = Math.floor(nearestStep / 12) - 1
 
-            const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
-            const centsOff = Math.floor(1200 * Math.log2(frequency / targetFrequency))
-            const absCentsOff = Math.abs(centsOff)
-            const color = absCentsOff <= 5 ? '#22c55e' : absCentsOff <= 15 ? '#eab308' : '#ef4444'
-            // TODO: <= 5 for green is too much maybe? Recheck it
+        const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
+        const centsOff = Math.floor(1200 * Math.log2(frequency / targetFrequency))
+        const absCentsOff = Math.abs(centsOff)
+        const color = absCentsOff <= 5 ? '#22c55e' : absCentsOff <= 15 ? '#eab308' : '#ef4444'
+        // TODO: <= 5 for green is too much maybe? Recheck it
 
-            return {
-                name,
-                octave,
-                centsOff,
-                frequency: `${frequency.toFixed(2)} Hz`,
-                targetFrequency: `${targetFrequency.toFixed(2)} Hz`,
-                color,
-            }
-        },
-        [A4, notesNames],
-    )
+        return {
+            name,
+            octave,
+            centsOff,
+            frequency: `${frequency.toFixed(2)} Hz`,
+            targetFrequency: `${targetFrequency.toFixed(2)} Hz`,
+            color,
+        }
+    }
 
     const startAudio = async () => {
         if (audioContextRef.current) return
@@ -86,19 +83,21 @@ export function useTuner(A4: number = 440, system: NoteSystem = 'english') {
             analyserRef.current = analyser
 
             const buffer = new Float32Array(analyser.fftSize)
+            let lastTimestamp = 0
 
-            const tick = () => {
+            const tick = (currentTimestamp: number) => {
                 analyser.getFloatTimeDomainData(buffer)
                 const freq = detect_pitch(buffer, audioContext.sampleRate)
 
-                if (freq > 0) {
+                if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
                     setNote(getNoteInfo(freq))
+                    lastTimestamp = currentTimestamp
                 }
 
                 requestRef.current = requestAnimationFrame(tick)
             }
 
-            tick() // TODO: make it less frequent than 60fps
+            requestRef.current = requestAnimationFrame(tick) // TODO: make it less frequent than 60fps
         } catch (err) {
             console.log('Error with microphone', err)
         }
