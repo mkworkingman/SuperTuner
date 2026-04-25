@@ -14,8 +14,9 @@ type NoteInfo = {
 
 let wasmPromise: Promise<void> | null = null
 let isWasmLoaded = false
+let globalAudioContext: AudioContext | null = null
+let globalAnalyser: AnalyserNode | null = null
 
-// TODO: switcher does not work for now
 export function useTuner(
     A4: number = 440,
     system: NoteSystem = 'english',
@@ -25,7 +26,6 @@ export function useTuner(
     const [isActive, setIsActive] = useState(false)
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
 
-    const audioContextRef = useRef<AudioContext | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const currentFrequencyRef = useRef<number | null>(null)
 
@@ -82,11 +82,16 @@ export function useTuner(
 
         const start = async () => {
             try {
-                const audioContext = new (
-                    window.AudioContext ||
-                    (window as typeof window & { webkitAudioContext: typeof AudioContext })
-                        .webkitAudioContext
-                )()
+                if (!globalAudioContext) {
+                    globalAudioContext = new (
+                        window.AudioContext ||
+                        (window as typeof window & { webkitAudioContext: typeof AudioContext })
+                            .webkitAudioContext
+                    )()
+                    globalAnalyser = globalAudioContext.createAnalyser()
+                    globalAnalyser.fftSize = 8192
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         echoCancellation: false,
@@ -100,25 +105,22 @@ export function useTuner(
                     return
                 }
 
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume()
+                if (globalAudioContext.state === 'suspended') {
+                    await globalAudioContext.resume()
                 }
 
-                const source = audioContext.createMediaStreamSource(stream)
-                const analyser = audioContext.createAnalyser()
-
-                analyser.fftSize = 8192
-                source.connect(analyser)
-
-                audioContextRef.current = audioContext
+                const source = globalAudioContext.createMediaStreamSource(stream)
+                source.connect(globalAnalyser!)
                 streamRef.current = stream
 
-                const buffer = new Float32Array(analyser.fftSize)
+                const buffer = new Float32Array(globalAnalyser!.fftSize)
                 let lastTimestamp = 0
 
                 const tick = (currentTimestamp: number) => {
-                    analyser.getFloatTimeDomainData(buffer)
-                    const freq = detect_pitch(buffer, audioContext.sampleRate)
+                    if (!globalAnalyser) return
+
+                    globalAnalyser.getFloatTimeDomainData(buffer)
+                    const freq = detect_pitch(buffer, globalAudioContext!.sampleRate)
 
                     if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
                         if (freq !== currentFrequencyRef.current) {
@@ -142,12 +144,18 @@ export function useTuner(
         return () => {
             isMounted = false
             setCurrentFrequency(null)
-            if (requestID) cancelAnimationFrame(requestID)
-            if (audioContextRef.current) audioContextRef.current.close()
-            if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
-            audioContextRef.current = null
-            streamRef.current = null
             currentFrequencyRef.current = null
+
+            if (requestID) cancelAnimationFrame(requestID)
+
+            if (globalAudioContext && globalAudioContext.state === 'running') {
+                globalAudioContext.suspend()
+            }
+
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((t) => t.stop())
+                streamRef.current = null
+            }
         }
     }, [isActive, isReady])
 
