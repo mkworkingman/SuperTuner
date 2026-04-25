@@ -13,9 +13,7 @@ type NoteInfo = {
 } | null
 
 let wasmPromise: Promise<void> | null = null
-let isWasmLoaded = false
-let globalAudioContext: AudioContext | null = null
-let globalAnalyser: AnalyserNode | null = null
+let isWasmLoaded = false // TODO: Into the store?
 
 const loadWasm = () => {
     if (wasmPromise) return wasmPromise
@@ -42,20 +40,19 @@ export function useTuner(
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
     const [error, setError] = useState<string | null>(null)
 
+    const audioCtxRef = useRef<AudioContext | null>(null)
+    const workletNodeRef = useRef<AudioWorkletNode | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
-    const currentFrequencyRef = useRef<number | null>(null)
 
     const notesNames = useMemo(() => NOTE_SYSTEMS[system][accidental], [system, accidental])
 
     const note = useMemo((): NoteInfo => {
         if (!currentFrequency || currentFrequency <= 0) return null
-
         const p = 69 + 12 * Math.log2(currentFrequency / A4)
         const nearestStep = Math.round(p)
         const name = notesNames[((nearestStep % 12) + 12) % 12]
         const octave = Math.floor(nearestStep / 12) - 1
-
         const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
         const centsOff = Math.floor(1200 * Math.log2(currentFrequency / targetFrequency))
         const absCentsOff = Math.abs(centsOff)
@@ -74,9 +71,7 @@ export function useTuner(
 
     useEffect(() => {
         if (isWasmLoaded) return
-
         let isMounted = true
-
         loadWasm()
             .then(() => {
                 if (isMounted) setIsReady(true)
@@ -85,22 +80,27 @@ export function useTuner(
                 console.error('WASM Load Error:', err)
                 if (isMounted) setError('Failed to initialize engine')
             })
-
         return () => {
             isMounted = false
         }
     }, [])
 
     useEffect(() => {
-        const handleVisibilityChange = () => {
+        const handleVisibilityChange = async () => {
             if (document.hidden) {
-                if (globalAudioContext?.state === 'running') {
-                    globalAudioContext.suspend()
-                }
+                audioCtxRef.current?.suspend()
             } else {
-                currentFrequencyRef.current = null
-                if (isActive && globalAudioContext?.state === 'suspended') {
-                    globalAudioContext.resume()
+                if (isActive) {
+                    const stream = streamRef.current
+                    const track = stream?.getAudioTracks()[0]
+
+                    if (!track || track.readyState === 'ended' || !track.enabled) {
+                        console.log('Stream lost in background, restarting...')
+                        setIsActive(false)
+                        setIsActive(true)
+                    } else {
+                        await audioCtxRef.current?.resume()
+                    }
                 }
             }
         }
@@ -113,18 +113,22 @@ export function useTuner(
         if (!isActive || !isReady) return
 
         let isMounted = true
-        let requestID: number
 
-        const start = async () => {
+        const initAudio = async () => {
             try {
-                if (!globalAudioContext || !globalAnalyser) {
-                    globalAudioContext = new (
-                        window.AudioContext ||
-                        (window as typeof window & { webkitAudioContext: typeof AudioContext })
-                            .webkitAudioContext
+                if (!audioCtxRef.current) {
+                    /* eslint-disable @typescript-eslint/no-explicit-any */
+                    audioCtxRef.current = new (
+                        window.AudioContext || (window as any).webkitAudioContext
                     )()
-                    globalAnalyser = globalAudioContext.createAnalyser()
-                    globalAnalyser.fftSize = 8192
+                    /* eslint-enable @typescript-eslint/no-explicit-any */
+                    await audioCtxRef.current.audioWorklet.addModule('/worklets/pitchProcessor.js')
+                }
+
+                const audioCtx = audioCtxRef.current!
+
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume()
                 }
 
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -140,80 +144,64 @@ export function useTuner(
                     return
                 }
 
-                if (globalAudioContext.state === 'suspended') {
-                    await globalAudioContext.resume()
+                const source = audioCtx.createMediaStreamSource(stream)
+                const pitchNode = new AudioWorkletNode(audioCtx, 'pitch-processor')
+
+                pitchNode.port.onmessage = (event) => {
+                    const buffer = event.data
+                    const freq = detect_pitch(buffer, audioCtx.sampleRate)
+                    if (freq > 0) {
+                        setCurrentFrequency(freq)
+                    }
                 }
 
-                const source = globalAudioContext.createMediaStreamSource(stream)
-
-                source.connect(globalAnalyser)
+                source.connect(pitchNode)
 
                 sourceRef.current = source
+                workletNodeRef.current = pitchNode
                 streamRef.current = stream
-
-                const buffer = new Float32Array(globalAnalyser.fftSize)
-                let lastTimestamp = 0
-
-                const tick = (currentTimestamp: number) => {
-                    if (!isMounted || !globalAnalyser || !globalAudioContext) return
-
-                    const elapsed = currentTimestamp - lastTimestamp
-
-                    if (elapsed >= 100) {
-                        lastTimestamp = currentTimestamp
-                        globalAnalyser.getFloatTimeDomainData(buffer)
-                        const freq = detect_pitch(buffer, globalAudioContext.sampleRate)
-
-                        if (freq > 0 && freq !== currentFrequencyRef.current) {
-                            currentFrequencyRef.current = freq
-                            setCurrentFrequency(freq)
-                        }
-                    }
-
-                    requestID = requestAnimationFrame(tick)
-                }
-
-                requestID = requestAnimationFrame(tick)
             } catch (err) {
-                console.error('Error with microphone', err)
-
+                console.error('Microphone/Worklet error:', err)
                 let message = 'Could not access microphone'
-
                 if (err instanceof DOMException && err.name === 'NotAllowedError') {
-                    message = 'Microphone permission denied. Please enable it in your browser.'
+                    message = 'Microphone permission denied.'
                 } else if (err instanceof DOMException && err.name === 'NotFoundError') {
-                    message = 'No microphone found on this device.'
+                    message = 'No microphone found.'
                 }
-
                 setError(message)
                 setIsActive(false)
             }
         }
 
-        start()
+        initAudio()
 
         return () => {
             isMounted = false
             setCurrentFrequency(null)
-            currentFrequencyRef.current = null
-
-            if (requestID) cancelAnimationFrame(requestID)
 
             if (sourceRef.current) {
                 sourceRef.current.disconnect()
                 sourceRef.current = null
             }
-
-            if (globalAudioContext && globalAudioContext.state === 'running') {
-                globalAudioContext.suspend()
+            if (workletNodeRef.current) {
+                workletNodeRef.current.disconnect()
+                workletNodeRef.current = null
             }
-
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach((t) => t.stop())
                 streamRef.current = null
             }
         }
     }, [isActive, isReady])
+
+    useEffect(() => {
+        return () => {
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close()
+                audioCtxRef.current = null
+            }
+        }
+    }, [])
 
     const startAudio = () => setIsActive(true)
     const stopAudio = () => setIsActive(false)
