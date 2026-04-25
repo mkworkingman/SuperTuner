@@ -92,6 +92,24 @@ export function useTuner(
     }, [])
 
     useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (globalAudioContext?.state === 'running') {
+                    globalAudioContext.suspend()
+                }
+            } else {
+                currentFrequencyRef.current = null
+                if (isActive && globalAudioContext?.state === 'suspended') {
+                    globalAudioContext.resume()
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }, [isActive])
+
+    useEffect(() => {
         if (!isActive || !isReady) return
 
         let isMounted = true
@@ -157,7 +175,17 @@ export function useTuner(
 
                 requestID = requestAnimationFrame(tick)
             } catch (err) {
-                console.log('Error with microphone', err)
+                console.error('Error with microphone', err)
+
+                let message = 'Could not access microphone'
+
+                if (err instanceof DOMException && err.name === 'NotAllowedError') {
+                    message = 'Microphone permission denied. Please enable it in your browser.'
+                } else if (err instanceof DOMException && err.name === 'NotFoundError') {
+                    message = 'No microphone found on this device.'
+                }
+
+                setError(message)
                 setIsActive(false)
             }
         }
