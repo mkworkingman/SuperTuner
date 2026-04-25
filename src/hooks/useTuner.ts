@@ -17,14 +17,30 @@ let isWasmLoaded = false
 let globalAudioContext: AudioContext | null = null
 let globalAnalyser: AnalyserNode | null = null
 
+const loadWasm = () => {
+    if (wasmPromise) return wasmPromise
+
+    wasmPromise = init()
+        .then(() => {
+            isWasmLoaded = true
+        })
+        .catch((err) => {
+            wasmPromise = null
+            throw err
+        })
+
+    return wasmPromise
+}
+
 export function useTuner(
     A4: number = 440,
     system: NoteSystem = 'english',
     accidental: AccidentalMode = 'sharps',
 ) {
-    const [isReady, setIsReady] = useState(isWasmLoaded)
+    const [isReady, setIsReady] = useState(() => isWasmLoaded)
     const [isActive, setIsActive] = useState(false)
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
     const streamRef = useRef<MediaStream | null>(null)
     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
@@ -59,16 +75,16 @@ export function useTuner(
     useEffect(() => {
         if (isWasmLoaded) return
 
-        if (!wasmPromise) {
-            wasmPromise = init().then(() => {
-                isWasmLoaded = true
-            })
-        }
-
         let isMounted = true
-        wasmPromise.then(() => {
-            if (isMounted) setIsReady(true)
-        })
+
+        loadWasm()
+            .then(() => {
+                if (isMounted) setIsReady(true)
+            })
+            .catch((err) => {
+                console.error('WASM Load Error:', err)
+                if (isMounted) setError('Failed to initialize engine')
+            })
 
         return () => {
             isMounted = false
@@ -112,7 +128,6 @@ export function useTuner(
 
                 const source = globalAudioContext.createMediaStreamSource(stream)
 
-                globalAnalyser.disconnect()
                 source.connect(globalAnalyser)
 
                 sourceRef.current = source
@@ -124,16 +139,19 @@ export function useTuner(
                 const tick = (currentTimestamp: number) => {
                     if (!isMounted || !globalAnalyser || !globalAudioContext) return
 
-                    globalAnalyser.getFloatTimeDomainData(buffer)
-                    const freq = detect_pitch(buffer, globalAudioContext.sampleRate)
+                    const elapsed = currentTimestamp - lastTimestamp
 
-                    if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
-                        if (freq !== currentFrequencyRef.current) {
+                    if (elapsed >= 100) {
+                        lastTimestamp = currentTimestamp
+                        globalAnalyser.getFloatTimeDomainData(buffer)
+                        const freq = detect_pitch(buffer, globalAudioContext.sampleRate)
+
+                        if (freq > 0 && freq !== currentFrequencyRef.current) {
                             currentFrequencyRef.current = freq
                             setCurrentFrequency(freq)
                         }
-                        lastTimestamp = currentTimestamp
                     }
+
                     requestID = requestAnimationFrame(tick)
                 }
 
@@ -172,5 +190,5 @@ export function useTuner(
     const startAudio = () => setIsActive(true)
     const stopAudio = () => setIsActive(false)
 
-    return { isReady, isActive, startAudio, stopAudio, note }
+    return { isReady, isActive, startAudio, stopAudio, error, note }
 }

@@ -11,7 +11,11 @@ export default function Tuner() {
     const [A4, setA4] = useState(440)
     const [system, setSystem] = useState<NoteSystem>('english')
     const [accidental, setAccidental] = useState<AccidentalMode>('sharps')
-    const { isReady, isActive, note, startAudio, stopAudio } = useTuner(A4, system, accidental)
+    const { isReady, isActive, note, startAudio, stopAudio, error } = useTuner(
+        A4,
+        system,
+        accidental,
+    )
 
     return (
         <div className="rounded-lg border p-8 shadow-sm">
