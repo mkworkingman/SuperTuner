@@ -2,37 +2,32 @@ class PitchProcessor extends AudioWorkletProcessor {
     constructor() {
         super()
         this.chunkSize = Math.round(sampleRate * 0.1)
-        this.buffer = new Float32Array(this.chunkSize + 2048)
-        this.writeIndex = 0
+        this.buffer = new Float32Array(this.chunkSize)
+        this.bufferFill = 0
     }
 
     process(inputs) {
         const input = inputs[0]?.[0]
         if (!input) return true
 
-        for (let i = 0; i < input.length; ) {
-            const remainingInBuffer = this.buffer.length - this.writeIndex
-            const toCopy = Math.min(input.length - i, remainingInBuffer)
+        const spaceLeft = this.chunkSize - this.bufferFill
 
-            if (toCopy === 0) {
-                this.port.postMessage(new Error('Buffer overflow'))
-                break
+        if (input.length <= spaceLeft) {
+            this.buffer.set(input, this.bufferFill)
+            this.bufferFill += input.length
+        } else {
+            this.buffer.set(input.subarray(0, spaceLeft), this.bufferFill)
+
+            if (this.port) {
+                const chunkToSend = this.buffer.slice()
+                this.port.postMessage(chunkToSend, [chunkToSend.buffer])
             }
 
-            this.buffer.set(input.subarray(i, i + toCopy), this.writeIndex)
-            this.writeIndex += toCopy
-            i += toCopy
-
-            if (this.writeIndex >= this.chunkSize) {
-                const chunk = this.buffer.slice(0, this.chunkSize)
-                this.port.postMessage(chunk, [chunk.buffer])
-                const remaining = this.writeIndex - this.chunkSize
-                if (remaining > 0) {
-                    this.buffer.copyWithin(0, this.chunkSize, this.writeIndex)
-                }
-                this.writeIndex = remaining
-            }
+            const leftovers = input.subarray(spaceLeft)
+            this.buffer.set(leftovers, 0)
+            this.bufferFill = leftovers.length
         }
+
         return true
     }
 }
