@@ -12,13 +12,16 @@ type NoteInfo = {
     color: string
 } | null
 
+let wasmPromise: Promise<void> | null = null
+let isWasmLoaded = false
+
 // TODO: switcher does not work for now
 export function useTuner(
     A4: number = 440,
     system: NoteSystem = 'english',
     accidental: AccidentalMode = 'sharps',
 ) {
-    const [isReady, setIsReady] = useState(false)
+    const [isReady, setIsReady] = useState(isWasmLoaded)
     const [isActive, setIsActive] = useState(false)
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
 
@@ -53,10 +56,19 @@ export function useTuner(
     }, [currentFrequency, A4, notesNames])
 
     useEffect(() => {
+        if (isWasmLoaded) return
+
+        if (!wasmPromise) {
+            wasmPromise = init().then(() => {
+                isWasmLoaded = true
+            })
+        }
+
         let isMounted = true
-        init().then(() => {
+        wasmPromise.then(() => {
             if (isMounted) setIsReady(true)
         })
+
         return () => {
             isMounted = false
         }
@@ -75,7 +87,13 @@ export function useTuner(
                     (window as typeof window & { webkitAudioContext: typeof AudioContext })
                         .webkitAudioContext
                 )()
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false,
+                    },
+                })
 
                 if (!isMounted) {
                     stream.getTracks().forEach((t) => t.stop())
