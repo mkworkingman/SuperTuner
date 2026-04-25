@@ -19,41 +19,25 @@ export function useTuner(
     accidental: AccidentalMode = 'sharps',
 ) {
     const [isReady, setIsReady] = useState(false)
-    const [note, setNote] = useState<NoteInfo>(null)
+    const [isActive, setIsActive] = useState(false)
+    const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
 
-    const audioContextRef = useRef<AudioContext>(null)
-    const analyserRef = useRef<AnalyserNode>(null)
-    const streamRef = useRef<MediaStream>(null)
-    const requestRef = useRef<number>(null)
+    const audioContextRef = useRef<AudioContext | null>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+    const currentFrequencyRef = useRef<number | null>(null)
 
     const notesNames = useMemo(() => NOTE_SYSTEMS[system][accidental], [system, accidental])
 
-    const settingsRef = useRef({ A4, notesNames })
+    const note = useMemo((): NoteInfo => {
+        if (!currentFrequency || currentFrequency <= 0) return null
 
-    useEffect(() => {
-        init().then(() => setIsReady(true))
-
-        return () => {
-            if (requestRef.current) cancelAnimationFrame(requestRef.current)
-            if (audioContextRef.current) audioContextRef.current.close()
-            if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop())
-        }
-    }, [])
-
-    useEffect(() => {
-        settingsRef.current = { A4, notesNames }
-    }, [A4, notesNames])
-
-    const getNoteInfo = (frequency: number): NoteInfo => {
-        if (frequency <= 0) return null
-
-        const p = 69 + 12 * Math.log2(frequency / A4)
+        const p = 69 + 12 * Math.log2(currentFrequency / A4)
         const nearestStep = Math.round(p)
         const name = notesNames[((nearestStep % 12) + 12) % 12]
         const octave = Math.floor(nearestStep / 12) - 1
 
         const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
-        const centsOff = Math.floor(1200 * Math.log2(frequency / targetFrequency))
+        const centsOff = Math.floor(1200 * Math.log2(currentFrequency / targetFrequency))
         const absCentsOff = Math.abs(centsOff)
         const color = absCentsOff <= 5 ? '#22c55e' : absCentsOff <= 15 ? '#eab308' : '#ef4444'
         // TODO: <= 5 for green is too much maybe? Recheck it
@@ -62,52 +46,95 @@ export function useTuner(
             name,
             octave,
             centsOff,
-            frequency: `${frequency.toFixed(2)} Hz`,
+            frequency: `${currentFrequency.toFixed(2)} Hz`,
             targetFrequency: `${targetFrequency.toFixed(2)} Hz`,
             color,
         }
-    }
+    }, [currentFrequency, A4, notesNames])
 
-    const startAudio = async () => {
-        if (audioContextRef.current) return
+    useEffect(() => {
+        let isMounted = true
+        init().then(() => {
+            if (isMounted) setIsReady(true)
+        })
+        return () => {
+            isMounted = false
+        }
+    }, [])
 
-        try {
-            const audioContext = new (
-                window.AudioContext ||
-                (window as typeof window & { webkitAudioContext: typeof AudioContext })
-                    .webkitAudioContext
-            )()
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const source = audioContext.createMediaStreamSource(stream)
-            const analyser = audioContext.createAnalyser()
+    useEffect(() => {
+        if (!isActive || !isReady) return
 
-            analyser.fftSize = 8192
-            source.connect(analyser)
+        let isMounted = true
+        let requestID: number
 
-            audioContextRef.current = audioContext
-            streamRef.current = stream
-            analyserRef.current = analyser
+        const start = async () => {
+            try {
+                const audioContext = new (
+                    window.AudioContext ||
+                    (window as typeof window & { webkitAudioContext: typeof AudioContext })
+                        .webkitAudioContext
+                )()
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-            const buffer = new Float32Array(analyser.fftSize)
-            let lastTimestamp = 0
-
-            const tick = (currentTimestamp: number) => {
-                analyser.getFloatTimeDomainData(buffer)
-                const freq = detect_pitch(buffer, audioContext.sampleRate)
-
-                if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
-                    setNote(getNoteInfo(freq))
-                    lastTimestamp = currentTimestamp
+                if (!isMounted) {
+                    stream.getTracks().forEach((t) => t.stop())
+                    return
                 }
 
-                requestRef.current = requestAnimationFrame(tick)
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume()
+                }
+
+                const source = audioContext.createMediaStreamSource(stream)
+                const analyser = audioContext.createAnalyser()
+
+                analyser.fftSize = 8192
+                source.connect(analyser)
+
+                audioContextRef.current = audioContext
+                streamRef.current = stream
+
+                const buffer = new Float32Array(analyser.fftSize)
+                let lastTimestamp = 0
+
+                const tick = (currentTimestamp: number) => {
+                    analyser.getFloatTimeDomainData(buffer)
+                    const freq = detect_pitch(buffer, audioContext.sampleRate)
+
+                    if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
+                        if (freq !== currentFrequencyRef.current) {
+                            currentFrequencyRef.current = freq
+                            setCurrentFrequency(freq)
+                        }
+                        lastTimestamp = currentTimestamp
+                    }
+                    requestID = requestAnimationFrame(tick)
+                }
+
+                requestID = requestAnimationFrame(tick)
+            } catch (err) {
+                console.log('Error with microphone', err)
+                setIsActive(false)
             }
-
-            requestRef.current = requestAnimationFrame(tick) // TODO: make it less frequent than 60fps
-        } catch (err) {
-            console.log('Error with microphone', err)
         }
-    }
 
-    return { isReady, note, startAudio }
+        start()
+
+        return () => {
+            isMounted = false
+            setCurrentFrequency(null)
+            if (requestID) cancelAnimationFrame(requestID)
+            if (audioContextRef.current) audioContextRef.current.close()
+            if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
+            audioContextRef.current = null
+            streamRef.current = null
+            currentFrequencyRef.current = null
+        }
+    }, [isActive, isReady])
+
+    const startAudio = () => setIsActive(true)
+    const stopAudio = () => setIsActive(false)
+
+    return { isReady, isActive, startAudio, stopAudio, note }
 }

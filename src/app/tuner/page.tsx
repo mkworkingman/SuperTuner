@@ -11,7 +11,7 @@ export default function Tuner() {
     const [A4, setA4] = useState(440)
     const [system, setSystem] = useState<NoteSystem>('english')
     const [accidental, setAccidental] = useState<AccidentalMode>('sharps')
-    const { isReady, note, startAudio } = useTuner(A4, system, accidental)
+    const { isReady, isActive, note, startAudio, stopAudio } = useTuner(A4, system, accidental)
 
     return (
         <div className="rounded-lg border p-8 shadow-sm">
@@ -24,10 +24,10 @@ export default function Tuner() {
                 <div className="space-y-4">
                     <div className="flex items-center gap-6">
                         <button
-                            onClick={startAudio}
+                            onClick={isActive ? stopAudio : startAudio}
                             className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
                         >
-                            Start Listening
+                            {isActive ? 'Stop Listening' : 'Start Listening'}
                         </button>
                         <div>
                             <A4Toggle value={A4} onChange={setA4} />
