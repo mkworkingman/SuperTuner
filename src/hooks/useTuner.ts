@@ -27,6 +27,7 @@ export function useTuner(
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
 
     const streamRef = useRef<MediaStream | null>(null)
+    const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
     const currentFrequencyRef = useRef<number | null>(null)
 
     const notesNames = useMemo(() => NOTE_SYSTEMS[system][accidental], [system, accidental])
@@ -82,7 +83,7 @@ export function useTuner(
 
         const start = async () => {
             try {
-                if (!globalAudioContext) {
+                if (!globalAudioContext || !globalAnalyser) {
                     globalAudioContext = new (
                         window.AudioContext ||
                         (window as typeof window & { webkitAudioContext: typeof AudioContext })
@@ -110,17 +111,21 @@ export function useTuner(
                 }
 
                 const source = globalAudioContext.createMediaStreamSource(stream)
-                source.connect(globalAnalyser!)
+
+                globalAnalyser.disconnect()
+                source.connect(globalAnalyser)
+
+                sourceRef.current = source
                 streamRef.current = stream
 
-                const buffer = new Float32Array(globalAnalyser!.fftSize)
+                const buffer = new Float32Array(globalAnalyser.fftSize)
                 let lastTimestamp = 0
 
                 const tick = (currentTimestamp: number) => {
-                    if (!globalAnalyser) return
+                    if (!isMounted || !globalAnalyser || !globalAudioContext) return
 
                     globalAnalyser.getFloatTimeDomainData(buffer)
-                    const freq = detect_pitch(buffer, globalAudioContext!.sampleRate)
+                    const freq = detect_pitch(buffer, globalAudioContext.sampleRate)
 
                     if (freq > 0 && currentTimestamp - lastTimestamp > 100) {
                         if (freq !== currentFrequencyRef.current) {
@@ -147,6 +152,11 @@ export function useTuner(
             currentFrequencyRef.current = null
 
             if (requestID) cancelAnimationFrame(requestID)
+
+            if (sourceRef.current) {
+                sourceRef.current.disconnect()
+                sourceRef.current = null
+            }
 
             if (globalAudioContext && globalAudioContext.state === 'running') {
                 globalAudioContext.suspend()
