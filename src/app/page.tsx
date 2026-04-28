@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import Logo from '@/components/logo'
 import { PAGE_BACKGROUNDS } from '@/consts/colors'
+import type { Route } from 'next'
 
-const NAV_LINKS = [
+const NAV_LINKS: {
+    href: Route
+    label: string
+}[] = [
     { href: '/tuner', label: 'Tuner' },
     { href: '/guess', label: 'Guess The Note/Interval/Chord' },
     { href: '/metronome', label: 'Metronome' },

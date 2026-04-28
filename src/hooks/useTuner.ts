@@ -51,7 +51,7 @@ export function useTuner(
         if (!currentFrequency || currentFrequency <= 0) return null
         const p = 69 + 12 * Math.log2(currentFrequency / A4)
         const nearestStep = Math.round(p)
-        const name = notesNames[((nearestStep % 12) + 12) % 12]
+        const name = notesNames[((nearestStep % 12) + 12) % 12]!
         const octave = Math.floor(nearestStep / 12) - 1
         const targetFrequency = A4 * Math.pow(2, (nearestStep - 69) / 12)
         const centsOff = Math.floor(1200 * Math.log2(currentFrequency / targetFrequency))
