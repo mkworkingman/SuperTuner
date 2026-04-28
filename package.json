@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:scss": "stylelint \"**/*.scss\"",
-    "lint:scss:fix": "stylelint \"**/*.scss\" --fix"
+    "lint:scss:fix": "stylelint \"**/*.scss\" --fix",
+    "ts": "tsc --noEmit"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
