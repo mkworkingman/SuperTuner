@@ -1,22 +1,15 @@
 .base {
     position: relative;
-
-    &::before,
-    &::after {
-        font-size: 2.5rem;
-        font-weight: 800;
-        content: attr(data-text);
-    }
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: transparent;
+    background-image: linear-gradient(to right, #0891b2, #a855f7);
+    background-clip: text;
 
     &::before {
         position: absolute;
         inset: -0.125rem 0 0 -0.125rem;
         color: #111;
-    }
-
-    &::after {
-        color: transparent;
-        background-image: linear-gradient(to right, #0891b2, #a855f7);
-        background-clip: text;
+        content: attr(data-text);
     }
 }
