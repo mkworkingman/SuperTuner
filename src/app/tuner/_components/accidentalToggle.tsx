@@ -1,34 +1,29 @@
 import { AccidentalMode } from '@/types'
+import TunerSettingButton from './ui/tunerSettingButton'
+import TunerSettingGroup from './ui/tunerSettingGroup'
 
-export default function AccidentalToggle({
-    value,
-    onChange,
-}: {
+type AccidentalToggleProps = {
     value: AccidentalMode
     onChange: (val: AccidentalMode) => void
-}) {
+}
+
+export default function AccidentalToggle({ value, onChange }: AccidentalToggleProps) {
+    const options: { value: AccidentalMode; label: string }[] = [
+        { value: 'sharps', label: '♯' },
+        { value: 'flats', label: '♭' },
+    ]
+
     return (
-        <div className="w-fit rounded-xl border border-slate-800 bg-slate-900 p-1">
-            <button
-                onClick={() => onChange('sharps')}
-                className={`rounded-lg px-6 py-2 text-lg transition-all duration-200 ${
-                    value === 'sharps'
-                        ? 'bg-slate-700 text-white shadow-md'
-                        : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
-                }`}
-            >
-                ♯
-            </button>
-            <button
-                onClick={() => onChange('flats')}
-                className={`rounded-lg px-6 py-2 text-lg transition-all ${
-                    value === 'flats'
-                        ? 'bg-slate-700 text-white shadow-md'
-                        : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
-                }`}
-            >
-                ♭
-            </button>
-        </div>
+        <TunerSettingGroup>
+            {options.map((opt) => (
+                <TunerSettingButton
+                    key={opt.value}
+                    onClick={() => onChange(opt.value)}
+                    isActive={value === opt.value}
+                >
+                    {opt.label}
+                </TunerSettingButton>
+            ))}
+        </TunerSettingGroup>
     )
 }

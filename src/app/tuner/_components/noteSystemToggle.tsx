@@ -1,4 +1,6 @@
 import { NoteSystem } from '@/types'
+import TunerSettingButton from './ui/tunerSettingButton'
+import TunerSettingGroup from './ui/tunerSettingGroup'
 
 export default function NoteSystemToggle({
     value,
@@ -7,32 +9,27 @@ export default function NoteSystemToggle({
     value: NoteSystem
     onChange: (val: NoteSystem) => void
 }) {
-    const systems: { label: NoteSystem; example: string }[] = [
-        { label: 'english', example: 'C D E F G A B' },
-        { label: 'german', example: 'C D E F G A H' },
-        { label: 'solfege', example: 'Do Re Mi Fa Sol La Si' },
-        { label: 'solfegeTi', example: 'Do Re Mi Fa Sol La Ti' },
+    const options: { value: NoteSystem; label: string; example: string }[] = [
+        { value: 'english', label: 'English', example: 'C D E F G A B' },
+        { value: 'german', label: 'German', example: 'C D E F G A H' },
+        { value: 'solfege', label: 'Solfege', example: 'Do Re Mi Fa Sol La Si' },
+        { value: 'solfegeTi', label: 'Solfege (Ti)', example: 'Do Re Mi Fa Sol La Ti' },
     ]
 
     return (
-        <div className="flex flex-col rounded-xl border border-slate-800 bg-slate-900 p-1">
-            {systems.map((sys) => {
-                const isActive = value === sys.label
+        <TunerSettingGroup isColumn>
+            {options.map((opt) => {
                 return (
-                    <button
-                        key={sys.label}
-                        onClick={() => onChange(sys.label)}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            isActive
-                                ? 'bg-slate-700 text-white shadow-sm'
-                                : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
-                        } `}
+                    <TunerSettingButton
+                        key={opt.value}
+                        onClick={() => onChange(opt.value)}
+                        isActive={value === opt.value}
                     >
-                        <p>{sys.label}</p>
-                        <p>{sys.example}</p>
-                    </button>
+                        <p>{opt.label}</p>
+                        <p className="text-xs font-normal opacity-70">{opt.example}</p>
+                    </TunerSettingButton>
                 )
             })}
-        </div>
+        </TunerSettingGroup>
     )
 }
