@@ -14,8 +14,8 @@ export default function A4Toggle({ value, onChange }: A4ToggleType) {
                     onClick={() => onChange(opt)}
                     className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-all duration-200 ${
                         value === opt
-                            ? 'bg-green-600 text-white shadow-lg shadow-green-900/20'
-                            : 'cursor-pointer text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            ? 'bg-slate-700 text-white shadow-md'
+                            : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
                     }`}
                 >
                     {opt}

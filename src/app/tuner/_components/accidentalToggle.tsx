@@ -8,23 +8,23 @@ export default function AccidentalToggle({
     onChange: (val: AccidentalMode) => void
 }) {
     return (
-        <div className="inline-flex rounded-xl border border-slate-800 bg-slate-900 p-1">
+        <div className="w-fit rounded-xl border border-slate-800 bg-slate-900 p-1">
             <button
                 onClick={() => onChange('sharps')}
-                className={`cursor-pointer rounded-lg px-6 py-2 text-lg transition-all ${
+                className={`rounded-lg px-6 py-2 text-lg transition-all duration-200 ${
                     value === 'sharps'
                         ? 'bg-slate-700 text-white shadow-md'
-                        : 'text-slate-500 hover:text-slate-300'
+                        : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
                 }`}
             >
                 ♯
             </button>
             <button
                 onClick={() => onChange('flats')}
-                className={`cursor-pointer rounded-lg px-6 py-2 text-lg transition-all ${
+                className={`rounded-lg px-6 py-2 text-lg transition-all ${
                     value === 'flats'
                         ? 'bg-slate-700 text-white shadow-md'
-                        : 'text-slate-500 hover:text-slate-300'
+                        : 'cursor-pointer text-slate-500 hover:bg-slate-800 hover:text-slate-300'
                 }`}
             >
                 ♭
