@@ -22,6 +22,13 @@ export default function Tuner() {
             <Link href="/">Back</Link>
             <h2 className="mb-4 text-xl font-bold">Tuner</h2>
 
+            {error && (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    <p className="font-bold">Error</p>
+                    <p>{error}</p>
+                </div>
+            )}
+
             {!isReady ? (
                 <p>Loading WebAssembly...</p>
             ) : (
