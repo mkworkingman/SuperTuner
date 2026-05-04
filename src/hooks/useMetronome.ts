@@ -23,7 +23,6 @@ export function useMetronome() {
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
     }, [isActive])
 
-    // 2. Main Worklet Lifecycle
     useEffect(() => {
         if (!isActive) {
             workletNodeRef.current?.port.postMessage({ type: 'STOP' })
