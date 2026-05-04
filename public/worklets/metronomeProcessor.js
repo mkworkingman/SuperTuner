@@ -8,14 +8,24 @@ class MetronomeProcessor extends AudioWorkletProcessor {
 
         this.port.onmessage = (e) => {
             const { type, value } = e.data
-            if (type === 'START') this.isPlaying = true
-            if (type === 'STOP') {
-                this.isPlaying = false
-                this.sampleCount = 0
-                this.beat = 0
-            }
-            if (type === 'SET_BPM') {
-                this.bpm = value
+
+            switch (type) {
+                case 'START':
+                    this.isPlaying = true
+                    break
+
+                case 'STOP':
+                    this.isPlaying = false
+                    this.sampleCount = 0
+                    this.beat = 0
+                    break
+
+                case 'SET_BPM':
+                    this.bpm = value
+                    break
+
+                default:
+                    console.warn(`Unknown message type: ${type}`)
             }
         }
     }
