@@ -3,7 +3,17 @@ import Link from 'next/link'
 import { useMetronome } from '@/hooks/useMetronome'
 
 export default function Metronome() {
-    const { isActive, bpm, setBpm, toggleMetronome, error } = useMetronome()
+    const {
+        isActive,
+        bpm,
+        setBpm,
+        beatCount,
+        setBeatCount,
+        isAccentEnabled,
+        setIsAccentEnabled,
+        toggleMetronome,
+        error,
+    } = useMetronome()
 
     return (
         <div className="p-8">
@@ -18,14 +28,34 @@ export default function Metronome() {
             )}
 
             <div className="flex max-w-xs flex-col gap-4">
-                <label>BPM: {bpm}</label>
+                <span>BPM: {bpm}</span>
                 <input
                     type="range"
                     min="40"
                     max="240"
-                    value={bpm}
-                    onChange={(e) => setBpm(Number(e.target.value))}
+                    defaultValue={bpm}
+                    onMouseUp={(e) => setBpm(Number(e.currentTarget.value))}
                 />
+
+                <span>Beat Count: {beatCount}</span>
+                <input
+                    type="range"
+                    min="2"
+                    max="8"
+                    defaultValue={beatCount}
+                    onMouseUp={(e) => setBeatCount(Number(e.currentTarget.value))}
+                    disabled={!isAccentEnabled}
+                />
+
+                <label className="flex cursor-pointer items-center gap-3 select-none">
+                    <input
+                        type="checkbox"
+                        className="h-5 w-5 rounded"
+                        checked={isAccentEnabled}
+                        onChange={() => setIsAccentEnabled((prev) => !prev)}
+                    />
+                    <span>Enable Accent (Beat 1)</span>
+                </label>
 
                 <button onClick={toggleMetronome} className="rounded bg-black p-2 text-white">
                     {isActive ? 'STOP' : 'START'}
