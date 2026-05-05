@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useMetronome } from '@/hooks/useMetronome'
+import InputRange from './_components/inputRange'
 
 export default function Metronome() {
     const {
@@ -27,22 +28,19 @@ export default function Metronome() {
                 </div>
             )}
 
-            <div className="flex max-w-xs flex-col gap-4">
-                <span>BPM: {bpm}</span>
-                <input
-                    type="range"
+            <div className="flex max-w-xs flex-col gap-4 font-semibold">
+                <InputRange
+                    label="BPM"
                     min="40"
                     max="240"
-                    defaultValue={bpm}
+                    value={bpm}
                     onMouseUp={(e) => setBpm(Number(e.currentTarget.value))}
                 />
-
-                <span>Beat Count: {beatCount}</span>
-                <input
-                    type="range"
+                <InputRange
+                    label="Beat Count"
                     min="2"
                     max="8"
-                    defaultValue={beatCount}
+                    value={beatCount}
                     onMouseUp={(e) => setBeatCount(Number(e.currentTarget.value))}
                     disabled={!isAccentEnabled}
                 />
