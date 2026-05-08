@@ -1,6 +1,6 @@
 import { AccidentalMode } from '@/types'
-import TunerSettingButton from './ui/tunerSettingButton'
-import TunerSettingGroup from './ui/tunerSettingGroup'
+import TunerSettingButton from '@/components/customButton/tunerSettingButton'
+import TunerSettingGroup from '@/components/customGroupButton/tunerSettingGroup'
 
 type AccidentalToggleProps = {
     value: AccidentalMode

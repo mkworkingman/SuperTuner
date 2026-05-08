@@ -1,5 +1,5 @@
-import TunerSettingButton from './ui/tunerSettingButton'
-import TunerSettingGroup from './ui/tunerSettingGroup'
+import TunerSettingButton from '@/components/customButton/tunerSettingButton'
+import TunerSettingGroup from '@/components/customGroupButton/tunerSettingGroup'
 
 type A4ToggleType = {
     value: number
