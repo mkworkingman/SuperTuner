@@ -1,14 +1,10 @@
-type TunerSettingButtonType = {
+type CustomButtonType = {
     isActive: boolean
     onClick: React.MouseEventHandler<HTMLButtonElement>
     children: string | number | React.ReactNode
 }
 
-export default function TunerSettingButton({
-    isActive,
-    onClick,
-    children,
-}: TunerSettingButtonType) {
+export default function CustomButton({ isActive, onClick, children }: CustomButtonType) {
     return (
         <button
             onClick={onClick}

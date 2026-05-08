@@ -1,8 +1,8 @@
 'use client'
 import { useBeatMachine } from '@/hooks/useBeatMachine'
 import Link from 'next/link'
-import TunerSettingButton from '@/components/customButton/tunerSettingButton'
-import InputRange from '@/components/inputRange/inputRange'
+import TunerSettingButton from '@/components/customButton'
+import InputRange from '@/components/inputRange'
 import BeatMachineGrid from './_components/beatMachineGrid'
 
 export default function BeatMachine() {

@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useMetronome } from '@/hooks/useMetronome'
-import InputRange from '@/components/inputRange/inputRange'
+import InputRange from '@/components/inputRange'
 
 export default function Metronome() {
     const {

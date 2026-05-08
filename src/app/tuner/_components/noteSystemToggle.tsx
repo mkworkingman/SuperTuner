@@ -1,6 +1,6 @@
 import { NoteSystem } from '@/types'
-import TunerSettingButton from '@/components/customButton/tunerSettingButton'
-import TunerSettingGroup from '@/components/customGroupButton/tunerSettingGroup'
+import TunerSettingButton from '@/components/customButton'
+import TunerSettingGroup from '@/components/customGroupButton'
 
 export default function NoteSystemToggle({
     value,
