@@ -9,6 +9,7 @@ const NAV_LINKS: {
 }[] = [
     { href: '/tuner', label: 'Tuner' },
     { href: '/guess', label: 'Guess The Note/Interval/Chord' },
+    { href: '/beat', label: 'Create a Beat' },
     { href: '/metronome', label: 'Metronome' },
     { href: '/about', label: 'About' },
 ]
