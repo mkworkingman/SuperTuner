@@ -7,13 +7,13 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <div>
+        <>
             <header className="p-4">
                 <Link href="/">
                     <Logo />
                 </Link>
             </header>
             {children}
-        </div>
+        </>
     )
 }
