@@ -13,7 +13,6 @@ const NAV_LINKS: {
     { href: '/beat', label: 'Beat Machine' },
     { href: '/about', label: 'About' },
 ]
-const linkStyle = 'block px-6 py-2 rounded-full text-center'
 
 export default function Home() {
     return (
@@ -26,7 +25,7 @@ export default function Home() {
                             <li key={link.href}>
                                 <Link
                                     href={link.href}
-                                    className={`${linkStyle} w-full`}
+                                    className={'block w-full rounded-full px-6 py-2 text-center'}
                                     style={{ backgroundColor: PAGE_BACKGROUNDS[link.href] }}
                                 >
                                     {link.label}
