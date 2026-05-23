@@ -9,7 +9,7 @@ export default function RootLayout({
     return (
         <>
             <header className="p-4">
-                <Link href="/">
+                <Link href="/" className="block w-fit">
                     <Logo />
                 </Link>
             </header>
