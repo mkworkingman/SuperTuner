@@ -1,5 +1,4 @@
 'use client'
-import Link from 'next/link'
 import { useMetronome } from '@/hooks/useMetronome'
 import InputRange from '@/components/inputRange'
 import { TOOLS_CLASSNAME } from '@/consts'
