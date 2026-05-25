@@ -17,7 +17,7 @@ export default function Nav() {
                             <Link
                                 href={link.href}
                                 className={`block h-8 w-8 rounded-full ${
-                                    isActive ? `${link.bgColor}` : 'bg-gray-400'
+                                    isActive ? `${link.bgColor} pointer-events-none` : 'bg-gray-400'
                                 }`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
