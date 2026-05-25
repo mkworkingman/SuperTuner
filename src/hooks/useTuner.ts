@@ -35,6 +35,7 @@ export function useTuner(
     system: NoteSystem = 'english',
     accidental: AccidentalMode = 'sharps',
 ) {
+    //TODO: figure out: do I need isReady or not?
     const [isReady, setIsReady] = useState(() => isWasmLoaded)
     const [isActive, setIsActive] = useState(false)
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
