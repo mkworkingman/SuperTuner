@@ -1,5 +1,7 @@
 import Logo from '@/components/logo'
 import Link from 'next/link'
+import Title from './_components/title'
+import Nav from './_components/nav'
 
 export default function RootLayout({
     children,
@@ -7,13 +9,23 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <>
-            <header className="p-4">
-                <Link href="/" className="block w-fit">
+        <div className="flex min-h-svh flex-col">
+            <header className="bg-app-root flex items-center border-b p-4 shadow-xl">
+                <Link href="/" className="mr-auto block w-fit">
                     <Logo />
                 </Link>
+                <Nav />
             </header>
-            {children}
-        </>
+            <main className="grow bg-indigo-300">
+                <div className="mx-auto max-w-7xl px-4 py-8">
+                    <Link href="/" className="block">
+                        ← Back Home
+                    </Link>
+                    <Title className="mb-4 text-3xl" />
+                    {children}
+                </div>
+            </main>
+            <footer className="bg-app-root">Footer</footer>
+        </div>
     )
 }

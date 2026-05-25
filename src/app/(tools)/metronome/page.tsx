@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useMetronome } from '@/hooks/useMetronome'
 import InputRange from '@/components/inputRange'
+import { TOOLS_CLASSNAME } from '@/consts'
 
 export default function Metronome() {
     const {
@@ -17,10 +18,7 @@ export default function Metronome() {
     } = useMetronome()
 
     return (
-        <div className="p-8">
-            <Link href="/">Back</Link>
-            <h2 className="mb-4 text-xl font-bold">Metronome</h2>
-
+        <div className={`bg-app-metronome ${TOOLS_CLASSNAME}`}>
             {error && (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <p className="font-bold">Error</p>

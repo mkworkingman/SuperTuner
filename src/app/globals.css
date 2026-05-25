@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+@theme {
+    --color-app-root: var(--color-indigo-600);
+    --color-app-tuner: var(--color-cyan-800);
+    --color-app-guess: var(--color-yellow-500);
+    --color-app-metronome: var(--color-green-400);
+    --color-app-beat: var(--color-slate-800);
+    --color-app-about: var(--color-pink-700);
+}
+
 @theme inline {
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);

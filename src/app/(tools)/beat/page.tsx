@@ -4,16 +4,14 @@ import Link from 'next/link'
 import TunerSettingButton from '@/components/customButton'
 import InputRange from '@/components/inputRange'
 import BeatMachineGrid from './_components/beatMachineGrid'
+import { TOOLS_CLASSNAME } from '@/consts'
 
 export default function BeatMachine() {
     const { isActive, bpm, setBpm, grid, activeStep, toggleBeatMachine, toggleCell, error } =
         useBeatMachine()
 
     return (
-        <div className="rounded-xl bg-slate-900 p-8 shadow-2xl">
-            <Link href="/">Back</Link>
-            <h2 className="mb-4 text-xl font-bold">Tuner</h2>
-
+        <div className={`bg-app-beat ${TOOLS_CLASSNAME}`}>
             {error && (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <p className="font-bold">Error</p>

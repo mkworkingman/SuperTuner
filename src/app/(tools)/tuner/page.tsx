@@ -1,11 +1,11 @@
 'use client'
-import Link from 'next/link'
 import { useTuner } from '@/hooks/useTuner'
 import A4Toggle from './_components/a4toggle'
 import NoteSystemToggle from './_components/noteSystemToggle'
 import AccidentalToggle from './_components/accidentalToggle'
 import { useState } from 'react'
 import { AccidentalMode, NoteSystem } from '@/types'
+import { TOOLS_CLASSNAME } from '@/consts'
 
 export default function Tuner() {
     const [A4, setA4] = useState(440)
@@ -18,10 +18,7 @@ export default function Tuner() {
     )
 
     return (
-        <div className="rounded-b-lg border p-8 shadow-sm">
-            <Link href="/">Back</Link>
-            <h2 className="mb-4 text-xl font-bold">Tuner</h2>
-
+        <div className={`bg-app-tuner ${TOOLS_CLASSNAME}`}>
             {error && (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <p className="font-bold">Error</p>
