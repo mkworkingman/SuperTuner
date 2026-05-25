@@ -2,7 +2,6 @@ import Logo from '@/components/logo'
 import Link from 'next/link'
 import Title from './_components/title'
 import Nav from './_components/nav'
-import { ViewTransition } from 'react'
 import TransitionProvider from './_components/transitionProvider'
 
 export default function RootLayout({
