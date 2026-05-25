@@ -41,9 +41,11 @@ body {
 }
 
 ::view-transition-new(.enter) {
+    pointer-events: none;
     animation: enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 ::view-transition-old(.exit) {
+    pointer-events: none;
     animation: exit 0.2s ease-in both;
 }

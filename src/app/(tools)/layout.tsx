@@ -19,7 +19,7 @@ export default function RootLayout({
             </header>
             <main className="grow bg-indigo-300">
                 <div className="mx-auto max-w-7xl px-4 py-8">
-                    <Link href="/" className="block">
+                    <Link href="/" className="inline">
                         ← Back Home
                     </Link>
                     <Title className="mb-4 text-3xl" />
