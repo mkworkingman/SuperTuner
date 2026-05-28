@@ -49,3 +49,11 @@ body {
     pointer-events: none;
     animation: exit 0.2s ease-in both;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+    }
+}
