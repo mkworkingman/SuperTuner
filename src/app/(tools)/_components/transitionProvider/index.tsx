@@ -8,8 +8,9 @@ export default function TransitionProvider({
     children: React.ReactNode
 }>) {
     const pathname = usePathname()
+
     return (
-        <ViewTransition enter={'enter'} exit={'exit'} key={pathname}>
+        <ViewTransition enter="enter" exit="exit" key={pathname}>
             {children}
         </ViewTransition>
     )
