@@ -2,7 +2,6 @@ import Logo from '@/components/logo'
 import Link from 'next/link'
 import Title from './_components/title'
 import Nav from './_components/nav'
-import TransitionProvider from './_components/transitionProvider'
 
 export default function RootLayout({
     children,
@@ -23,7 +22,7 @@ export default function RootLayout({
                         ← Back Home
                     </Link>
                     <Title className="mb-4 text-3xl" />
-                    <TransitionProvider>{children}</TransitionProvider>
+                    {children}
                 </div>
             </main>
             <footer className="bg-app-root">Footer</footer>
