@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { ROUTE_CONFIG } from '@/consts'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 
 export default function Nav() {
     const pathname = usePathname()
@@ -16,11 +17,18 @@ export default function Nav() {
                         <li key={link.href}>
                             <Link
                                 href={link.href}
-                                className={`block h-8 w-8 rounded-full ${
+                                className={`flex h-8 w-8 items-center justify-center rounded-full ${
                                     isActive ? `${link.bgColor} pointer-events-none` : 'bg-gray-400'
                                 }`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
+                                <Image
+                                    className={!isActive ? 'opacity-60' : ''}
+                                    src={link.img}
+                                    alt={link.label}
+                                    width={24}
+                                    height={24}
+                                />
                                 <span className="sr-only">{link.label}</span>
                             </Link>
                         </li>
