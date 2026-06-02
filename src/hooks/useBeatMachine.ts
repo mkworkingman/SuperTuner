@@ -121,6 +121,28 @@ export function useBeatMachine(initialGrid: BeatGrid) {
         })
     }, [])
 
+    const resize = useCallback((length: number) => {
+        setGrid((prev) => {
+            const next = {} as BeatGrid
+            for (const [key, row] of Object.entries(prev) as [keyof BeatGrid, number[]][]) {
+                next[key] =
+                    length < row.length
+                        ? row.slice(0, length)
+                        : [...row, ...Array(length - row.length).fill(0)]
+            }
+            workletNodeRef.current?.port.postMessage({
+                type: 'INIT_GRID',
+                payload: {
+                    grid: next,
+                    gridLength: length,
+                    stepsPerBeat: 4,
+                },
+            })
+
+            return next
+        })
+    }, [])
+
     return {
         isActive,
         bpm,
@@ -130,5 +152,6 @@ export function useBeatMachine(initialGrid: BeatGrid) {
         toggleBeatMachine,
         toggleCell,
         error,
+        resize,
     }
 }

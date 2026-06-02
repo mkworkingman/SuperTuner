@@ -37,16 +37,9 @@ class BeatProcessor extends AudioWorkletProcessor {
                     this.bpm = payload
                     break
                 case 'UPDATE_GRID':
-                    console.log('update')
-                    if (!this.grid[payload.instrument]) {
-                        this.grid[payload.instrument] = new Array(this.totalSteps).fill(0)
-                    }
                     this.grid[payload.instrument][payload.step] = payload.value
-                    this.totalSteps = this.grid[payload.instrument].length
                     break
                 case 'INIT_GRID':
-                    console.log('init')
-                    console.log(payload)
                     this.grid = payload.grid
                     this.totalSteps = payload.gridLength
                     this.stepsPerBeat = payload.stepsPerBeat

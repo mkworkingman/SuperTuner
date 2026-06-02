@@ -14,8 +14,17 @@ const INITIAL_GRID: BeatGrid = {
 }
 
 export default function BeatMachine() {
-    const { isActive, bpm, setBpm, grid, activeStep, toggleBeatMachine, toggleCell, error } =
-        useBeatMachine(INITIAL_GRID)
+    const {
+        isActive,
+        bpm,
+        setBpm,
+        grid,
+        activeStep,
+        toggleBeatMachine,
+        toggleCell,
+        error,
+        resize,
+    } = useBeatMachine(INITIAL_GRID)
 
     return (
         <div className={`bg-app-beat ${TOOLS_CLASSNAME}`}>
@@ -29,6 +38,9 @@ export default function BeatMachine() {
             <TunerSettingButton isActive={isActive} onClick={toggleBeatMachine}>
                 {isActive ? 'STOP' : 'START'}
             </TunerSettingButton>
+
+            {/* TEST */}
+            <button onClick={() => resize(12)}>RESIZE(12)</button>
 
             <InputRange
                 min="60"
