@@ -5,7 +5,8 @@ class BeatProcessor extends AudioWorkletProcessor {
         this.isPlaying = false
         this.bpm = 120
         this.currentStep = 0
-        this.totalSteps = 16
+        this.totalSteps = null
+        this.stepsPerBeat = null
 
         this.instrumentConfig = {
             kick: { freq: 60, gain: 0.2 },
@@ -36,10 +37,19 @@ class BeatProcessor extends AudioWorkletProcessor {
                     this.bpm = payload
                     break
                 case 'UPDATE_GRID':
+                    console.log('update')
                     if (!this.grid[payload.instrument]) {
                         this.grid[payload.instrument] = new Array(this.totalSteps).fill(0)
                     }
                     this.grid[payload.instrument][payload.step] = payload.value
+                    this.totalSteps = this.grid[payload.instrument].length
+                    break
+                case 'INIT_GRID':
+                    console.log('init')
+                    console.log(payload)
+                    this.grid = payload.grid
+                    this.totalSteps = payload.gridLength
+                    this.stepsPerBeat = payload.stepsPerBeat
                     break
             }
         }
@@ -51,7 +61,7 @@ class BeatProcessor extends AudioWorkletProcessor {
 
         if (!this.isPlaying || !channel) return true
 
-        const samplesPerStep = (sampleRate * 60) / this.bpm / 4
+        const samplesPerStep = (sampleRate * 60) / this.bpm / this.stepsPerBeat
 
         for (let i = 0; i < channel.length; i++) {
             if (this.sampleCount <= 0) {

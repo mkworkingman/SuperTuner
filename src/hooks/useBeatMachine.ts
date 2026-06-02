@@ -58,13 +58,13 @@ export function useBeatMachine(initialGrid: BeatGrid) {
                     beatNode.connect(audioCtx.destination)
                     workletNodeRef.current = beatNode
 
-                    Object.entries(grid).forEach(([instrument, steps]) => {
-                        steps.forEach((value, step) => {
-                            beatNode.port.postMessage({
-                                type: 'UPDATE_GRID',
-                                payload: { instrument, step, value },
-                            })
-                        })
+                    beatNode.port.postMessage({
+                        type: 'INIT_GRID',
+                        payload: {
+                            grid,
+                            gridLength: Object.values(grid)[0]?.length ?? 0,
+                            stepsPerBeat: 4,
+                        },
                     })
                 }
 
