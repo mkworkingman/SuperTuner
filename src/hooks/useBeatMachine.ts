@@ -1,17 +1,10 @@
 import { BeatGrid } from '@/types'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-const INITIAL_GRID: BeatGrid = {
-    kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-    snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    hats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    crash: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-}
-
-export function useBeatMachine() {
+export function useBeatMachine(initialGrid: BeatGrid) {
     const [isActive, setIsActive] = useState(false)
     const [bpm, setBpm] = useState(120)
-    const [grid, setGrid] = useState<BeatGrid>(INITIAL_GRID)
+    const [grid, setGrid] = useState<BeatGrid>(initialGrid)
     const [activeStep, setActiveStep] = useState(0)
     const [error, setError] = useState<string | null>(null)
 

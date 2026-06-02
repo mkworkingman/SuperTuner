@@ -12,14 +12,11 @@ class BeatProcessor extends AudioWorkletProcessor {
             snare: { freq: 220, gain: 0.1 },
             hats: { freq: 1760, gain: 0.1 },
             crash: { freq: 3520, gain: 0.1 },
+            beep: { freq: 440, gain: 0.1 },
+            accent: { freq: 880, gain: 0.1 },
         }
 
-        this.grid = {
-            kick: new Array(16).fill(0),
-            snare: new Array(16).fill(0),
-            hats: new Array(16).fill(0),
-            crash: new Array(16).fill(0),
-        }
+        this.grid = {}
 
         this.activeVoices = []
 
@@ -39,6 +36,9 @@ class BeatProcessor extends AudioWorkletProcessor {
                     this.bpm = payload
                     break
                 case 'UPDATE_GRID':
+                    if (!this.grid[payload.instrument]) {
+                        this.grid[payload.instrument] = new Array(this.totalSteps).fill(0)
+                    }
                     this.grid[payload.instrument][payload.step] = payload.value
                     break
             }
