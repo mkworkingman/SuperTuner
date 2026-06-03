@@ -34,12 +34,7 @@ export function useBeatMachine(initialGrid: BeatGrid) {
         const initAudio = async () => {
             try {
                 if (!audioCtxRef.current) {
-                    /* eslint-disable @typescript-eslint/no-explicit-any */
-                    audioCtxRef.current = new (
-                        window.AudioContext || (window as any).webkitAudioContext
-                    )()
-                    /* eslint-enable @typescript-eslint/no-explicit-any */
-
+                    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
                     await audioCtxRef.current.audioWorklet.addModule('/worklets/beatProcessor.js')
                 }
 
