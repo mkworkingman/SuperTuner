@@ -1,10 +1,11 @@
 import { BeatGrid } from '@/types'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-export function useBeatMachine(initialGrid: BeatGrid) {
+export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
     const [isActive, setIsActive] = useState(false)
     const [bpm, setBpm] = useState(120)
     const [grid, setGrid] = useState<BeatGrid>(initialGrid)
+    const [stepsPerBeat, setStepsPerBeat] = useState<number>(spb)
     const [activeStep, setActiveStep] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
@@ -58,7 +59,7 @@ export function useBeatMachine(initialGrid: BeatGrid) {
                         payload: {
                             grid,
                             gridLength: Object.values(grid)[0]?.length ?? 0,
-                            stepsPerBeat: 4,
+                            stepsPerBeat,
                         },
                     })
                 }
@@ -81,7 +82,7 @@ export function useBeatMachine(initialGrid: BeatGrid) {
             isMounted = false
             workletNodeRef.current?.port.postMessage({ type: 'STOP' })
         }
-    }, [isActive, bpm, grid])
+    }, [isActive, bpm, grid, stepsPerBeat])
 
     useEffect(() => {
         workletNodeRef.current?.port.postMessage({ type: 'SET_BPM', payload: bpm })
@@ -116,25 +117,39 @@ export function useBeatMachine(initialGrid: BeatGrid) {
         })
     }, [])
 
-    const resize = useCallback((length: number) => {
-        setGrid((prev) => {
-            const next = {} as BeatGrid
-            for (const [key, row] of Object.entries(prev) as [keyof BeatGrid, number[]][]) {
-                next[key] =
-                    length < row.length
-                        ? row.slice(0, length)
-                        : [...row, ...Array(length - row.length).fill(0)]
-            }
+    const resize = useCallback(
+        (length: number) => {
+            setGrid((prev) => {
+                const next = {} as BeatGrid
+                for (const [key, row] of Object.entries(prev) as [keyof BeatGrid, number[]][]) {
+                    next[key] =
+                        length < row.length
+                            ? row.slice(0, length)
+                            : [...row, ...Array(length - row.length).fill(0)]
+                }
+                workletNodeRef.current?.port.postMessage({
+                    type: 'INIT_GRID',
+                    payload: {
+                        grid: next,
+                        gridLength: length,
+                        stepsPerBeat,
+                    },
+                })
+
+                return next
+            })
+        },
+        [stepsPerBeat],
+    )
+
+    const changeBeatsPerMinute = useCallback((steps: number) => {
+        setStepsPerBeat(() => {
             workletNodeRef.current?.port.postMessage({
-                type: 'INIT_GRID',
-                payload: {
-                    grid: next,
-                    gridLength: length,
-                    stepsPerBeat: 4,
-                },
+                type: 'UPDATE_SPB',
+                payload: steps,
             })
 
-            return next
+            return steps
         })
     }, [])
 
@@ -148,5 +163,6 @@ export function useBeatMachine(initialGrid: BeatGrid) {
         toggleCell,
         error,
         resize,
+        changeBeatsPerMinute,
     }
 }

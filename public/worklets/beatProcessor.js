@@ -39,6 +39,9 @@ class BeatProcessor extends AudioWorkletProcessor {
                 case 'UPDATE_GRID':
                     this.grid[payload.instrument][payload.step] = payload.value
                     break
+                case 'UPDATE_SPB':
+                    this.stepsPerBeat = payload
+                    break
                 case 'INIT_GRID':
                     this.grid = payload.grid
                     this.totalSteps = payload.gridLength
@@ -73,10 +76,8 @@ class BeatProcessor extends AudioWorkletProcessor {
                 const progress = voice.elapsed / clickDuration
                 const t = voice.elapsed / sampleRate
 
-                // Apply pitch drop for the kick to make it sound "tighter"
                 let currentFreq = voice.freq
 
-                // Waveform generation
                 const signal = Math.sign(Math.sin(2 * Math.PI * currentFreq * t))
                 const envelope = 1 - progress
 
@@ -88,7 +89,6 @@ class BeatProcessor extends AudioWorkletProcessor {
                 }
             }
 
-            // Soft clipping (tanh) prevents harsh digital distortion if multiple sounds peak
             channel[i] = Math.tanh(mixedSample)
             this.sampleCount--
         }

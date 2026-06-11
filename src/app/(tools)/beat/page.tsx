@@ -13,6 +13,8 @@ const INITIAL_GRID: BeatGrid = {
     crash: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 }
 
+const STEPS_PER_BEAT = 4
+
 export default function BeatMachine() {
     const {
         isActive,
@@ -24,7 +26,8 @@ export default function BeatMachine() {
         toggleCell,
         error,
         resize,
-    } = useBeatMachine(INITIAL_GRID)
+        changeBeatsPerMinute,
+    } = useBeatMachine(INITIAL_GRID, STEPS_PER_BEAT)
 
     return (
         <div className={`bg-app-beat ${TOOLS_CLASSNAME}`}>
@@ -41,6 +44,7 @@ export default function BeatMachine() {
 
             {/* TEST */}
             <button onClick={() => resize(12)}>RESIZE(12)</button>
+            <button onClick={() => changeBeatsPerMinute(2)}>stepsPerBeat(2)</button>
 
             <InputRange
                 min="60"
