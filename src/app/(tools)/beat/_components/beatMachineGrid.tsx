@@ -1,7 +1,7 @@
 'use client'
 import { BeatGrid } from '@/types'
 
-type InputRangeType = {
+type BeatMachineGridType = {
     isActive: boolean
     grid: BeatGrid
     activeStep: number
@@ -13,7 +13,7 @@ export default function BeatMachineGrid({
     grid,
     activeStep,
     toggleCell,
-}: InputRangeType) {
+}: BeatMachineGridType) {
     return (
         <div className="grid gap-3">
             {Object.entries(grid).map(([instrument, steps]) => (
