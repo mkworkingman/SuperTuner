@@ -5,10 +5,21 @@ export function useMetronome() {
     const [bpm, setBpm] = useState(120)
     const [beatCount, setBeatCount] = useState(4)
     const [isAccentEnabled, setIsAccentEnabled] = useState(true)
+    const [activeStep, setActiveStep] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
     const audioCtxRef = useRef<AudioContext | null>(null)
     const workletNodeRef = useRef<AudioWorkletNode | null>(null)
+
+    const buildGrid = (count: number, accent: boolean) => {
+        const accentRow = Array(count).fill(0)
+        const beepRow = Array(count).fill(0)
+        for (let i = 0; i < count; i++) {
+            if (i === 0 && accent) accentRow[i] = 1
+            else beepRow[i] = 1
+        }
+        return { accent: accentRow, beep: beepRow }
+    }
 
     useEffect(() => {
         const handleVisibilityChange = async () => {
@@ -34,25 +45,37 @@ export function useMetronome() {
             try {
                 if (!audioCtxRef.current) {
                     audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-                    await audioCtxRef.current.audioWorklet.addModule(
-                        '/worklets/metronomeProcessor.js',
-                    )
+                    await audioCtxRef.current.audioWorklet.addModule('/worklets/beatProcessor.js')
                 }
 
                 const audioCtx = audioCtxRef.current!
                 if (audioCtx.state === 'suspended') await audioCtx.resume()
 
                 if (!workletNodeRef.current) {
-                    const metronomeNode = new AudioWorkletNode(audioCtx, 'metronome-processor')
+                    const metronomeNode = new AudioWorkletNode(audioCtx, 'beat-processor')
+
+                    metronomeNode.port.onmessage = (e) => {
+                        if (e.data.type === 'TICK') {
+                            setActiveStep(e.data.step)
+                        }
+                    }
+
                     metronomeNode.connect(audioCtx.destination)
                     workletNodeRef.current = metronomeNode
+
+                    metronomeNode.port.postMessage({
+                        type: 'INIT_GRID',
+                        payload: {
+                            grid: buildGrid(beatCount, isAccentEnabled),
+                            gridLength: beatCount,
+                            stepsPerBeat: 1,
+                        },
+                    })
                 }
 
                 if (isMounted) {
                     const port = workletNodeRef.current.port
-                    port.postMessage({ type: 'SET_BPM', value: bpm })
-                    port.postMessage({ type: 'SET_BEAT_COUNT', value: beatCount })
-                    port.postMessage({ type: 'SET_ACCENT', value: isAccentEnabled })
+                    port.postMessage({ type: 'SET_BPM', payload: bpm })
                     port.postMessage({ type: 'START' })
                 }
             } catch (err) {
@@ -71,19 +94,19 @@ export function useMetronome() {
     }, [isActive, bpm, beatCount, isAccentEnabled])
 
     useEffect(() => {
-        workletNodeRef.current?.port.postMessage({ type: 'SET_BPM', value: bpm })
+        workletNodeRef.current?.port.postMessage({ type: 'SET_BPM', payload: bpm })
     }, [bpm])
 
     useEffect(() => {
         workletNodeRef.current?.port.postMessage({
-            type: 'SET_BEAT_COUNT',
-            value: beatCount,
+            type: 'INIT_GRID',
+            payload: {
+                grid: buildGrid(beatCount, isAccentEnabled),
+                gridLength: beatCount,
+                stepsPerBeat: 1,
+            },
         })
-    }, [beatCount])
-
-    useEffect(() => {
-        workletNodeRef.current?.port.postMessage({ type: 'SET_ACCENT', value: isAccentEnabled })
-    }, [isAccentEnabled])
+    }, [beatCount, isAccentEnabled])
 
     useEffect(() => {
         return () => {
@@ -103,6 +126,7 @@ export function useMetronome() {
         setBeatCount,
         isAccentEnabled,
         setIsAccentEnabled,
+        activeStep,
         toggleMetronome,
         error,
     }
