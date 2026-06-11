@@ -119,38 +119,29 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
 
     const resize = useCallback(
         (length: number) => {
-            setGrid((prev) => {
-                const next = {} as BeatGrid
-                for (const [key, row] of Object.entries(prev) as [keyof BeatGrid, number[]][]) {
-                    next[key] =
-                        length < row.length
-                            ? row.slice(0, length)
-                            : [...row, ...Array(length - row.length).fill(0)]
-                }
-                workletNodeRef.current?.port.postMessage({
-                    type: 'INIT_GRID',
-                    payload: {
-                        grid: next,
-                        gridLength: length,
-                        stepsPerBeat,
-                    },
-                })
-
-                return next
+            const next = {} as BeatGrid
+            for (const [key, row] of Object.entries(grid) as [keyof BeatGrid, number[]][]) {
+                next[key] =
+                    length < row.length
+                        ? row.slice(0, length)
+                        : [...row, ...Array(length - row.length).fill(0)]
+            }
+            workletNodeRef.current?.port.postMessage({
+                type: 'INIT_GRID',
+                payload: {
+                    grid: next,
+                    gridLength: length,
+                    stepsPerBeat,
+                },
             })
+            setGrid(next)
         },
-        [stepsPerBeat],
+        [grid, stepsPerBeat],
     )
 
     const changeBeatsPerMinute = useCallback((steps: number) => {
-        setStepsPerBeat(() => {
-            workletNodeRef.current?.port.postMessage({
-                type: 'UPDATE_SPB',
-                payload: steps,
-            })
-
-            return steps
-        })
+        workletNodeRef.current?.port.postMessage({ type: 'UPDATE_SPB', payload: steps })
+        setStepsPerBeat(steps)
     }, [])
 
     return {
