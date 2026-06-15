@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Logo from '@/components/logo'
 import { ROUTE_CONFIG } from '@/consts'
+import { Logo } from '@/components/ui'
 
 export default function Home() {
     return (

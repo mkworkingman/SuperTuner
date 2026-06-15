@@ -1,7 +1,6 @@
-import Logo from '@/components/logo'
+import Logo from '@/components/ui/Logo'
 import Link from 'next/link'
-import Title from './_components/title'
-import Nav from './_components/nav'
+import { Nav, Title } from '@/components/layout'
 
 export default function RootLayout({
     children,

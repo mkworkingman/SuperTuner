@@ -1,6 +1,6 @@
 'use client'
 import { useMetronome } from '@/hooks/useMetronome'
-import InputRange from '@/components/inputRange'
+import { InputRange } from '@/components/ui'
 import { TOOLS_CLASSNAME } from '@/consts'
 
 export default function Metronome() {

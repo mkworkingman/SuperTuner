@@ -1,6 +1,6 @@
 'use client'
 import { MouseEventHandler, useState } from 'react'
-import style from './inputRange.module.scss'
+import style from './style.module.scss'
 
 type InputRangeType = {
     label: string

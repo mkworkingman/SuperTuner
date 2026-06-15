@@ -1,6 +1,5 @@
 import { AccidentalMode } from '@/types'
-import TunerSettingButton from '@/components/customButton'
-import TunerSettingGroup from '@/components/customGroupButton'
+import { CustomButton, CustomGroupButton } from '@/components/ui'
 
 type AccidentalToggleProps = {
     value: AccidentalMode
@@ -14,16 +13,16 @@ export default function AccidentalToggle({ value, onChange }: AccidentalTogglePr
     ]
 
     return (
-        <TunerSettingGroup>
+        <CustomGroupButton>
             {options.map((opt) => (
-                <TunerSettingButton
+                <CustomButton
                     key={opt.value}
                     onClick={() => onChange(opt.value)}
                     isActive={value === opt.value}
                 >
                     {opt.label}
-                </TunerSettingButton>
+                </CustomButton>
             ))}
-        </TunerSettingGroup>
+        </CustomGroupButton>
     )
 }

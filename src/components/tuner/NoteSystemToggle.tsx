@@ -1,6 +1,5 @@
 import { NoteSystem } from '@/types'
-import TunerSettingButton from '@/components/customButton'
-import TunerSettingGroup from '@/components/customGroupButton'
+import { CustomButton, CustomGroupButton } from '@/components/ui'
 
 export default function NoteSystemToggle({
     value,
@@ -17,19 +16,19 @@ export default function NoteSystemToggle({
     ]
 
     return (
-        <TunerSettingGroup isColumn>
+        <CustomGroupButton isColumn>
             {options.map((opt) => {
                 return (
-                    <TunerSettingButton
+                    <CustomButton
                         key={opt.value}
                         onClick={() => onChange(opt.value)}
                         isActive={value === opt.value}
                     >
                         <p>{opt.label}</p>
                         <p className="text-xs font-normal opacity-70">{opt.example}</p>
-                    </TunerSettingButton>
+                    </CustomButton>
                 )
             })}
-        </TunerSettingGroup>
+        </CustomGroupButton>
     )
 }

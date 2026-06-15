@@ -1,8 +1,7 @@
 'use client'
 import { useBeatMachine } from '@/hooks/useBeatMachine'
-import TunerSettingButton from '@/components/customButton'
-import InputRange from '@/components/inputRange'
-import BeatMachineGrid from './_components/beatMachineGrid'
+import { CustomButton, InputRange } from '@/components/ui'
+import BeatMachineGrid from '@/components/BeatMachineGrid'
 import { TOOLS_CLASSNAME } from '@/consts'
 import { BeatGrid } from '@/types'
 
@@ -38,9 +37,9 @@ export default function BeatMachine() {
                 </div>
             )}
 
-            <TunerSettingButton isActive={isActive} onClick={toggleBeatMachine}>
+            <CustomButton isActive={isActive} onClick={toggleBeatMachine}>
                 {isActive ? 'STOP' : 'START'}
-            </TunerSettingButton>
+            </CustomButton>
 
             {/* TEST */}
             <button onClick={() => resize(12)}>RESIZE(12)</button>
