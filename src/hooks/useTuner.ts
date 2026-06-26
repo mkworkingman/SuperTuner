@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import init, { detect_pitch } from '@/wasm/wasm_study'
-import { NoteSystem, AccidentalMode } from '@/types'
+import { NoteSystem, AccidentalMode, PitchProcessorEvent } from '@/types'
 import { NOTE_SYSTEMS } from '@/consts'
+import { ensureWorklet, resumeAudio, suspendAudio } from '@/lib/audioContext'
+
+const WORKLET_URL = '/worklets/pitchProcessor.js'
 
 type NoteInfo = {
     name: string
@@ -40,8 +43,11 @@ export function useTuner(
     const [isActive, setIsActive] = useState(false)
     const [currentFrequency, setCurrentFrequency] = useState<number | null>(null)
     const [error, setError] = useState<string | null>(null)
+    // Bumped to force a full teardown + re-init (e.g. when the mic stream is
+    // dropped while the tab is backgrounded). Toggling isActive off/on in the
+    // same handler would be auto-batched into a no-op, so it can't restart.
+    const [restartToken, setRestartToken] = useState(0)
 
-    const audioCtxRef = useRef<AudioContext | null>(null)
     const workletNodeRef = useRef<AudioWorkletNode | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
@@ -89,20 +95,17 @@ export function useTuner(
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.hidden) {
-                audioCtxRef.current?.suspend()
-            } else {
-                if (isActive) {
-                    const stream = streamRef.current
-                    const track = stream?.getAudioTracks()[0]
+                await suspendAudio()
+                return
+            }
+            if (!isActive) return
 
-                    if (!track || track.readyState === 'ended' || !track.enabled) {
-                        console.log('Stream lost in background, restarting...')
-                        setIsActive(false)
-                        setIsActive(true)
-                    } else {
-                        await audioCtxRef.current?.resume()
-                    }
-                }
+            const track = streamRef.current?.getAudioTracks()[0]
+            if (!track || track.readyState === 'ended' || !track.enabled) {
+                console.log('Stream lost in background, restarting...')
+                setRestartToken((t) => t + 1)
+            } else {
+                await resumeAudio()
             }
         }
 
@@ -113,20 +116,12 @@ export function useTuner(
     useEffect(() => {
         if (!isActive || !isReady) return
 
-        let isMounted = true
+        let cancelled = false
 
         const initAudio = async () => {
             try {
-                if (!audioCtxRef.current) {
-                    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-                    await audioCtxRef.current.audioWorklet.addModule('/worklets/pitchProcessor.js')
-                }
-
-                const audioCtx = audioCtxRef.current!
-
-                if (audioCtx.state === 'suspended') {
-                    await audioCtx.resume()
-                }
+                const audioCtx = await ensureWorklet(WORKLET_URL)
+                if (cancelled) return
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -136,7 +131,7 @@ export function useTuner(
                     },
                 })
 
-                if (!isMounted) {
+                if (cancelled) {
                     stream.getTracks().forEach((t) => t.stop())
                     return
                 }
@@ -144,9 +139,8 @@ export function useTuner(
                 const source = audioCtx.createMediaStreamSource(stream)
                 const pitchNode = new AudioWorkletNode(audioCtx, 'pitch-processor')
 
-                pitchNode.port.onmessage = (event) => {
-                    const buffer = event.data
-                    const freq = detect_pitch(buffer, audioCtx.sampleRate)
+                pitchNode.port.onmessage = (event: MessageEvent<PitchProcessorEvent>) => {
+                    const freq = detect_pitch(event.data, audioCtx.sampleRate)
                     if (freq > 0) {
                         setCurrentFrequency(freq)
                     }
@@ -157,6 +151,7 @@ export function useTuner(
                 sourceRef.current = source
                 workletNodeRef.current = pitchNode
                 streamRef.current = stream
+                setError(null)
             } catch (err) {
                 console.error('Microphone/Worklet error:', err)
                 let message = 'Could not access microphone'
@@ -173,7 +168,7 @@ export function useTuner(
         initAudio()
 
         return () => {
-            isMounted = false
+            cancelled = true
             setCurrentFrequency(null)
 
             if (sourceRef.current) {
@@ -189,16 +184,9 @@ export function useTuner(
                 streamRef.current = null
             }
         }
-    }, [isActive, isReady])
-
-    useEffect(() => {
-        return () => {
-            if (audioCtxRef.current) {
-                audioCtxRef.current.close()
-                audioCtxRef.current = null
-            }
-        }
-    }, [])
+        // The shared AudioContext is a singleton and is intentionally never
+        // closed here; we only tear down this hook's nodes and mic stream.
+    }, [isActive, isReady, restartToken])
 
     const startAudio = () => setIsActive(true)
     const stopAudio = () => setIsActive(false)

@@ -1,5 +1,8 @@
-import { BeatGrid } from '@/types'
+import { BeatGrid, BeatProcessorMessage, BeatProcessorEvent } from '@/types'
+import { ensureWorklet, resumeAudio, suspendAudio } from '@/lib/audioContext'
 import { useState, useEffect, useRef, useCallback } from 'react'
+
+const WORKLET_URL = '/worklets/beatProcessor.js'
 
 export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
     const [isActive, setIsActive] = useState(false)
@@ -9,16 +12,21 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
     const [activeStep, setActiveStep] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
-    const audioCtxRef = useRef<AudioContext | null>(null)
     const workletNodeRef = useRef<AudioWorkletNode | null>(null)
+
+    // Latest config, read once when the node is (re)started on activation.
+    // Live edits are pushed by the dedicated effects/callbacks below, so the
+    // activation effect must NOT depend on them — that would tear down and
+    // restart playback (resetting the playhead to step 0) on every change.
+    const configRef = useRef({ grid, bpm, stepsPerBeat })
+    useEffect(() => {
+        configRef.current = { grid, bpm, stepsPerBeat }
+    }, [grid, bpm, stepsPerBeat])
 
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.hidden) {
-                await audioCtxRef.current?.suspend()
-            } else if (isActive) {
-                await audioCtxRef.current?.resume()
-            }
+            if (document.hidden) await suspendAudio()
+            else if (isActive) await resumeAudio()
         }
         document.addEventListener('visibilitychange', handleVisibilityChange)
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -26,49 +34,41 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
 
     useEffect(() => {
         if (!isActive) {
-            workletNodeRef.current?.port.postMessage({ type: 'STOP' })
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
             return
         }
 
-        let isMounted = true
+        let cancelled = false
 
         const initAudio = async () => {
             try {
-                if (!audioCtxRef.current) {
-                    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-                    await audioCtxRef.current.audioWorklet.addModule('/worklets/beatProcessor.js')
-                }
-
-                const audioCtx = audioCtxRef.current!
-                if (audioCtx.state === 'suspended') await audioCtx.resume()
+                const audioCtx = await ensureWorklet(WORKLET_URL)
+                if (cancelled) return
 
                 if (!workletNodeRef.current) {
                     const beatNode = new AudioWorkletNode(audioCtx, 'beat-processor')
 
-                    beatNode.port.onmessage = (e) => {
-                        if (e.data.type === 'TICK') {
-                            setActiveStep(e.data.step)
-                        }
+                    beatNode.port.onmessage = (e: MessageEvent<BeatProcessorEvent>) => {
+                        if (e.data.type === 'TICK') setActiveStep(e.data.step)
                     }
 
                     beatNode.connect(audioCtx.destination)
                     workletNodeRef.current = beatNode
-
-                    beatNode.port.postMessage({
-                        type: 'INIT_GRID',
-                        payload: {
-                            grid,
-                            gridLength: Object.values(grid)[0]?.length ?? 0,
-                            stepsPerBeat,
-                        },
-                    })
                 }
 
-                if (isMounted) {
-                    const port = workletNodeRef.current.port
-                    port.postMessage({ type: 'SET_BPM', payload: bpm })
-                    port.postMessage({ type: 'START' })
-                }
+                const cfg = configRef.current
+                const port = workletNodeRef.current.port
+                port.postMessage({
+                    type: 'INIT_GRID',
+                    payload: {
+                        grid: cfg.grid,
+                        gridLength: Object.values(cfg.grid)[0]?.length ?? 0,
+                        stepsPerBeat: cfg.stepsPerBeat,
+                    },
+                } satisfies BeatProcessorMessage)
+                port.postMessage({ type: 'SET_BPM', payload: cfg.bpm } satisfies BeatProcessorMessage)
+                port.postMessage({ type: 'START' } satisfies BeatProcessorMessage)
+                setError(null)
             } catch (err) {
                 console.error('Beat Machine Error:', err)
                 setError('Failed to start audio engine')
@@ -79,20 +79,25 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
         initAudio()
 
         return () => {
-            isMounted = false
-            workletNodeRef.current?.port.postMessage({ type: 'STOP' })
+            cancelled = true
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
         }
-    }, [isActive, bpm, grid, stepsPerBeat])
+    }, [isActive])
 
     useEffect(() => {
-        workletNodeRef.current?.port.postMessage({ type: 'SET_BPM', payload: bpm })
+        workletNodeRef.current?.port.postMessage({
+            type: 'SET_BPM',
+            payload: bpm,
+        } satisfies BeatProcessorMessage)
     }, [bpm])
 
+    // Disconnect the node on unmount; the shared AudioContext is a singleton and
+    // is intentionally never closed here.
     useEffect(() => {
         return () => {
-            if (audioCtxRef.current) {
-                audioCtxRef.current.close()
-            }
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
+            workletNodeRef.current?.disconnect()
+            workletNodeRef.current = null
         }
     }, [])
 
@@ -109,7 +114,7 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
             workletNodeRef.current?.port.postMessage({
                 type: 'UPDATE_GRID',
                 payload: { instrument, step, value: newValue },
-            })
+            } satisfies BeatProcessorMessage)
             return {
                 ...prev,
                 [instrument]: currentInstrumentSteps.map((v, i) => (i === step ? newValue : v)),
@@ -133,14 +138,17 @@ export function useBeatMachine(initialGrid: BeatGrid, spb: number) {
                     gridLength: length,
                     stepsPerBeat,
                 },
-            })
+            } satisfies BeatProcessorMessage)
             setGrid(next)
         },
         [grid, stepsPerBeat],
     )
 
     const changeBeatsPerMinute = useCallback((steps: number) => {
-        workletNodeRef.current?.port.postMessage({ type: 'UPDATE_SPB', payload: steps })
+        workletNodeRef.current?.port.postMessage({
+            type: 'UPDATE_SPB',
+            payload: steps,
+        } satisfies BeatProcessorMessage)
         setStepsPerBeat(steps)
     }, [])
 

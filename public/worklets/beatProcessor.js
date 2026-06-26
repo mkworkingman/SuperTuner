@@ -1,3 +1,11 @@
+/**
+ * beat-processor — owns the timing clock for the metronome and beat machine.
+ * Counts samples and emits a `TICK` per step; the main thread only sends config.
+ *
+ * Message protocol is typed in src/types/worklet.ts
+ * (BeatProcessorMessage main->worklet, BeatProcessorEvent worklet->main).
+ * Keep the `switch (type)` below in sync with that union.
+ */
 class BeatProcessor extends AudioWorkletProcessor {
     constructor() {
         super()
@@ -26,26 +34,32 @@ class BeatProcessor extends AudioWorkletProcessor {
             switch (type) {
                 case 'START':
                     this.isPlaying = true
+                    console.log('START')
                     break
                 case 'STOP':
                     this.isPlaying = false
                     this.sampleCount = 0
                     this.currentStep = 0
                     this.activeVoices = []
+                    console.log('STOP')
                     break
                 case 'SET_BPM':
                     this.bpm = payload
+                    console.log('SET_BPM')
                     break
                 case 'UPDATE_GRID':
                     this.grid[payload.instrument][payload.step] = payload.value
+                    console.log('UPDATE_GRID')
                     break
                 case 'UPDATE_SPB':
                     this.stepsPerBeat = payload
+                    console.log('UPDATE_SPB')
                     break
                 case 'INIT_GRID':
                     this.grid = payload.grid
                     this.totalSteps = payload.gridLength
                     this.stepsPerBeat = payload.stepsPerBeat
+                    console.log('INIT_GRID')
                     break
             }
         }

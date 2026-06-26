@@ -1,4 +1,18 @@
+import { BeatProcessorMessage, BeatProcessorEvent } from '@/types'
+import { ensureWorklet, resumeAudio, suspendAudio } from '@/lib/audioContext'
 import { useState, useEffect, useRef } from 'react'
+
+const WORKLET_URL = '/worklets/beatProcessor.js'
+
+const buildGrid = (count: number, accent: boolean) => {
+    const accentRow = Array(count).fill(0)
+    const beepRow = Array(count).fill(0)
+    for (let i = 0; i < count; i++) {
+        if (i === 0 && accent) accentRow[i] = 1
+        else beepRow[i] = 1
+    }
+    return { accent: accentRow, beep: beepRow }
+}
 
 export function useMetronome() {
     const [isActive, setIsActive] = useState(false)
@@ -8,26 +22,21 @@ export function useMetronome() {
     const [activeStep, setActiveStep] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
-    const audioCtxRef = useRef<AudioContext | null>(null)
     const workletNodeRef = useRef<AudioWorkletNode | null>(null)
 
-    const buildGrid = (count: number, accent: boolean) => {
-        const accentRow = Array(count).fill(0)
-        const beepRow = Array(count).fill(0)
-        for (let i = 0; i < count; i++) {
-            if (i === 0 && accent) accentRow[i] = 1
-            else beepRow[i] = 1
-        }
-        return { accent: accentRow, beep: beepRow }
-    }
+    // Latest config, read once when the node is (re)started on activation.
+    // Live changes are pushed by the dedicated effects below, so the activation
+    // effect must NOT depend on them — that would restart the metronome (and
+    // reset the playhead) on every BPM / beat-count / accent change.
+    const configRef = useRef({ bpm, beatCount, isAccentEnabled })
+    useEffect(() => {
+        configRef.current = { bpm, beatCount, isAccentEnabled }
+    }, [bpm, beatCount, isAccentEnabled])
 
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.hidden) {
-                await audioCtxRef.current?.suspend()
-            } else if (isActive) {
-                await audioCtxRef.current?.resume()
-            }
+            if (document.hidden) await suspendAudio()
+            else if (isActive) await resumeAudio()
         }
         document.addEventListener('visibilitychange', handleVisibilityChange)
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -35,49 +44,41 @@ export function useMetronome() {
 
     useEffect(() => {
         if (!isActive) {
-            workletNodeRef.current?.port.postMessage({ type: 'STOP' })
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
             return
         }
 
-        let isMounted = true
+        let cancelled = false
 
         const initAudio = async () => {
             try {
-                if (!audioCtxRef.current) {
-                    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-                    await audioCtxRef.current.audioWorklet.addModule('/worklets/beatProcessor.js')
-                }
-
-                const audioCtx = audioCtxRef.current!
-                if (audioCtx.state === 'suspended') await audioCtx.resume()
+                const audioCtx = await ensureWorklet(WORKLET_URL)
+                if (cancelled) return
 
                 if (!workletNodeRef.current) {
                     const metronomeNode = new AudioWorkletNode(audioCtx, 'beat-processor')
 
-                    metronomeNode.port.onmessage = (e) => {
-                        if (e.data.type === 'TICK') {
-                            setActiveStep(e.data.step)
-                        }
+                    metronomeNode.port.onmessage = (e: MessageEvent<BeatProcessorEvent>) => {
+                        if (e.data.type === 'TICK') setActiveStep(e.data.step)
                     }
 
                     metronomeNode.connect(audioCtx.destination)
                     workletNodeRef.current = metronomeNode
-
-                    metronomeNode.port.postMessage({
-                        type: 'INIT_GRID',
-                        payload: {
-                            grid: buildGrid(beatCount, isAccentEnabled),
-                            gridLength: beatCount,
-                            stepsPerBeat: 1,
-                        },
-                    })
                 }
 
-                if (isMounted) {
-                    const port = workletNodeRef.current.port
-                    port.postMessage({ type: 'SET_BPM', payload: bpm })
-                    port.postMessage({ type: 'START' })
-                }
+                const cfg = configRef.current
+                const port = workletNodeRef.current.port
+                port.postMessage({
+                    type: 'INIT_GRID',
+                    payload: {
+                        grid: buildGrid(cfg.beatCount, cfg.isAccentEnabled),
+                        gridLength: cfg.beatCount,
+                        stepsPerBeat: 1,
+                    },
+                } satisfies BeatProcessorMessage)
+                port.postMessage({ type: 'SET_BPM', payload: cfg.bpm } satisfies BeatProcessorMessage)
+                port.postMessage({ type: 'START' } satisfies BeatProcessorMessage)
+                setError(null)
             } catch (err) {
                 console.error('Metronome Error:', err)
                 setError('Failed to start audio engine')
@@ -88,13 +89,16 @@ export function useMetronome() {
         initAudio()
 
         return () => {
-            isMounted = false
-            workletNodeRef.current?.port.postMessage({ type: 'STOP' })
+            cancelled = true
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
         }
-    }, [isActive, bpm, beatCount, isAccentEnabled])
+    }, [isActive])
 
     useEffect(() => {
-        workletNodeRef.current?.port.postMessage({ type: 'SET_BPM', payload: bpm })
+        workletNodeRef.current?.port.postMessage({
+            type: 'SET_BPM',
+            payload: bpm,
+        } satisfies BeatProcessorMessage)
     }, [bpm])
 
     useEffect(() => {
@@ -105,14 +109,16 @@ export function useMetronome() {
                 gridLength: beatCount,
                 stepsPerBeat: 1,
             },
-        })
+        } satisfies BeatProcessorMessage)
     }, [beatCount, isAccentEnabled])
 
+    // Disconnect the node on unmount; the shared AudioContext is a singleton and
+    // is intentionally never closed here.
     useEffect(() => {
         return () => {
-            if (audioCtxRef.current) {
-                audioCtxRef.current.close()
-            }
+            workletNodeRef.current?.port.postMessage({ type: 'STOP' } satisfies BeatProcessorMessage)
+            workletNodeRef.current?.disconnect()
+            workletNodeRef.current = null
         }
     }, [])
 
