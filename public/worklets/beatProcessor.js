@@ -51,9 +51,11 @@ class BeatProcessor extends AudioWorkletProcessor {
         }
     }
 
-    process(inputs, outputs) {
+    process(_, outputs) {
         const output = outputs[0]
         const channel = output[0]
+
+        console.log('this.isPlaying: ' + this.isPlaying)
 
         if (!this.isPlaying || !channel) return true
 
