@@ -7,6 +7,8 @@ interface StoreState {
     isRunning: boolean
     status: 'idle' | 'pending' | 'success' | 'failure'
     initAudio: () => Promise<void>
+    resumeAudio: () => Promise<void>
+    suspendAudio: () => Promise<void>
 }
 
 export const useAudioEngineStore = create<StoreState>()(
@@ -42,6 +44,22 @@ export const useAudioEngineStore = create<StoreState>()(
                     console.error(error)
                     set({ status: 'failure' })
                 }
+            },
+
+            async resumeAudio() {
+                const { ctx } = get()
+                if (ctx?.state !== 'suspended') return
+
+                await ctx.resume()
+                set({ isRunning: true })
+            },
+
+            async suspendAudio() {
+                const { ctx } = get()
+                if (ctx?.state !== 'running') return
+
+                await ctx.suspend()
+                set({ isRunning: false })
             },
         }) satisfies StoreState,
 )
