@@ -39,3 +39,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 1. Suspend after 10 seconds of waiting
 2. Polyrhythm
+3. If no access to mic, then ask again
