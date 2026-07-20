@@ -67,13 +67,13 @@ export const useAudioEngineStore = create<StoreState>()(
 
                 async resumeAudio() {
                     const { ctx, status, autoSuspendTimer } = get()
-                    if (ctx?.state !== 'suspended' || status !== 'success') return
+                    if (status !== 'success') return
 
                     if (autoSuspendTimer) {
                         clearTimeout(autoSuspendTimer)
                     }
 
-                    await ctx.resume()
+                    if (ctx?.state === 'suspended') await ctx.resume()
                     set({ isRunning: true, autoSuspendTimer: null })
                 },
 

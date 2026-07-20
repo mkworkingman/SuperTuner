@@ -43,7 +43,7 @@ export function useBeatMachine_2() {
                 stepsPerBeat: 4, // or whatever your default is
             },
         })
-        state.workletNode?.port.postMessage({ type: 'START' })
+        // state.workletNode?.port.postMessage({ type: 'START' })
     }, [state.workletNode?.port])
     // state.workletNode?.port.postMessage({ type: 'START' })
 
