@@ -6,10 +6,19 @@ interface StoreState {
     loadedModules: Set<string>
     isRunning: boolean
     status: 'idle' | 'pending' | 'success' | 'failure'
-    initAudio: () => Promise<void>
-    resumeAudio: () => Promise<void>
-    suspendAudio: () => Promise<void>
+    autoSuspendTimer: ReturnType<typeof setTimeout> | null
+    actions: {
+        initAudio: () => Promise<void>
+        resumeAudio: () => Promise<void>
+        suspendAudio: () => Promise<void>
+    }
 }
+
+// workletNode.port.postMessage
+// workletNode.port.onmessage
+
+// const AUTO_SUSPEND_MS = 5000
+// let autoSuspendTimer: ReturnType<typeof setTimeout> | null = null
 
 export const useAudioEngineStore = create<StoreState>()(
     (set, get) =>
@@ -19,47 +28,66 @@ export const useAudioEngineStore = create<StoreState>()(
             loadedModules: new Set<string>(),
             isRunning: false,
             status: 'idle',
+            autoSuspendTimer: null,
 
-            async initAudio() {
-                const status = get().status
-                if (status === 'pending' || status === 'success') return
-                set({ status: 'pending' })
+            actions: {
+                async initAudio() {
+                    const status = get().status
+                    if (status === 'pending' || status === 'success') return
+                    set({ status: 'pending' })
 
-                let { ctx, workletNode, loadedModules } = get()
-                ctx ??= new (window.AudioContext || window.webkitAudioContext)()
+                    let { ctx, workletNode, loadedModules } = get()
+                    ctx ??= new (window.AudioContext || window.webkitAudioContext)()
 
-                try {
-                    if (!loadedModules.has('/worklets/beatProcessor.js')) {
-                        await ctx.audioWorklet.addModule('/worklets/beatProcessor.js')
-                        loadedModules = new Set(loadedModules).add('/worklets/beatProcessor.js')
+                    try {
+                        if (!loadedModules.has('/worklets/beatProcessor.js')) {
+                            await ctx.audioWorklet.addModule('/worklets/beatProcessor.js')
+                            loadedModules = new Set(loadedModules).add('/worklets/beatProcessor.js')
+                        }
+
+                        if (!workletNode) {
+                            workletNode = new AudioWorkletNode(ctx, 'beat-processor')
+                            workletNode.connect(ctx.destination)
+                        }
+
+                        set({
+                            ctx,
+                            workletNode,
+                            loadedModules,
+                            status: 'success',
+                            autoSuspendTimer: setTimeout(() => {
+                                ctx.suspend()
+                            }, 5000),
+                        })
+                    } catch (error) {
+                        console.error(error)
+                        set({ status: 'failure' })
+                    }
+                },
+
+                async resumeAudio() {
+                    const { ctx, status, autoSuspendTimer } = get()
+                    if (ctx?.state !== 'suspended' || status !== 'success') return
+
+                    if (autoSuspendTimer) {
+                        clearTimeout(autoSuspendTimer)
                     }
 
-                    if (!workletNode) {
-                        workletNode = new AudioWorkletNode(ctx, 'beat-processor')
-                        workletNode.connect(ctx.destination)
-                    }
+                    await ctx.resume()
+                    set({ isRunning: true, autoSuspendTimer: null })
+                },
 
-                    set({ ctx, workletNode, loadedModules, status: 'success' })
-                } catch (error) {
-                    console.error(error)
-                    set({ status: 'failure' })
-                }
-            },
+                async suspendAudio() {
+                    const { ctx, status } = get()
+                    if (ctx?.state !== 'running' || status !== 'success') return
 
-            async resumeAudio() {
-                const { ctx } = get()
-                if (ctx?.state !== 'suspended') return
-
-                await ctx.resume()
-                set({ isRunning: true })
-            },
-
-            async suspendAudio() {
-                const { ctx } = get()
-                if (ctx?.state !== 'running') return
-
-                await ctx.suspend()
-                set({ isRunning: false })
+                    set({
+                        isRunning: false,
+                        autoSuspendTimer: setTimeout(() => {
+                            ctx.suspend()
+                        }, 5000),
+                    })
+                },
             },
         }) satisfies StoreState,
 )

@@ -16,10 +16,12 @@ const INITIAL_GRID: BeatGrid = {
 const STEPS_PER_BEAT = 4
 
 export default function BeatMachine() {
-    useBeatMachine_2()
+    const { startAudio, stopAudio } = useBeatMachine_2()
 
     return (
         <div className={`bg-app-beat ${TOOLS_CLASSNAME}`}>
+            <button onClick={startAudio}>Start</button>
+            <button onClick={stopAudio}>Stop</button>
             {/* {error && (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <p className="font-bold">Error</p>
