@@ -19,6 +19,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "moduleDetection": "force",
     "plugins": [
       {
         "name": "next"
