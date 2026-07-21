@@ -14,12 +14,6 @@ interface StoreState {
     }
 }
 
-// workletNode.port.postMessage
-// workletNode.port.onmessage
-
-// const AUTO_SUSPEND_MS = 5000
-// let autoSuspendTimer: ReturnType<typeof setTimeout> | null = null
-
 export const useAudioEngineStore = create<StoreState>()(
     (set, get) =>
         ({
