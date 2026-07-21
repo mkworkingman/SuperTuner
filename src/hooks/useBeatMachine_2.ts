@@ -11,11 +11,9 @@ const INITIAL_GRID: BeatGrid = {
 
 export function useBeatMachine_2() {
     const state = useAudioEngineStore((state) => state)
-    state.actions.initAudio()
-    console.log(state)
-    console.log(state.ctx?.state)
 
     useEffect(() => {
+        state.actions.initAudio()
         state.workletNode?.port.postMessage({
             type: 'INIT_GRID',
             payload: {
@@ -24,7 +22,7 @@ export function useBeatMachine_2() {
                 stepsPerBeat: 4, // or whatever your default is
             },
         })
-    }, [state.workletNode?.port])
+    }, [state.actions, state.workletNode?.port])
 
     const startAudio = async () => {
         await state.actions.resumeAudio()
