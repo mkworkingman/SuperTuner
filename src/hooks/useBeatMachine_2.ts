@@ -11,7 +11,6 @@ const INITIAL_GRID: BeatGrid = {
 
 export function useBeatMachine_2() {
     const state = useAudioEngineStore((state) => state)
-
     useEffect(() => {
         let cancelled = false
 
@@ -21,28 +20,52 @@ export function useBeatMachine_2() {
             }
         })
 
-        state.workletNode?.port.postMessage({
-            type: 'INIT_GRID',
-            payload: {
-                grid: INITIAL_GRID,
-                gridLength: INITIAL_GRID.kick?.length,
-                stepsPerBeat: 4,
-            },
-        })
+        const port = state.workletNode?.port
+        if (!port) return
+
+        const handleMessage = (e: MessageEvent) => {
+            switch (e.data.type) {
+                case 'READY':
+                    port.postMessage({
+                        type: 'INIT_GRID',
+                        payload: {
+                            grid: INITIAL_GRID,
+                            gridLength: INITIAL_GRID.kick?.length,
+                            stepsPerBeat: 4,
+                        },
+                    })
+                    console.log('READY')
+                    break
+                // TODO: connect STARTED with Zustand, audio, js processor
+                // case 'STARTED':
+                //     state.actions.setIsPlaying(true)
+                //     break
+                // case 'STOPPED':
+                //     state.actions.setIsPlaying(false)
+                //     break
+                // case 'TICK':
+                //     state.actions.setCurrentStep(e.data.step)
+                //     break
+            }
+        }
+
+        port.addEventListener('message', handleMessage)
+        port.start()
 
         return () => {
             cancelled = true
+            port.removeEventListener('message', handleMessage)
         }
     }, [state.actions, state.workletNode?.port])
 
     const startAudio = async () => {
-        await state.actions.resumeAudio()
         state.workletNode?.port.postMessage({ type: 'START' })
+        await state.actions.resumeAudio()
     }
 
     const stopAudio = async () => {
-        await state.actions.suspendAudio()
         state.workletNode?.port.postMessage({ type: 'STOP' })
+        await state.actions.suspendAudio()
     }
 
     return {

@@ -49,6 +49,8 @@ class BeatProcessor extends AudioWorkletProcessor {
                     break
             }
         }
+
+        this.port.postMessage({ type: 'READY' })
     }
 
     process(_, outputs) {
@@ -57,7 +59,7 @@ class BeatProcessor extends AudioWorkletProcessor {
 
         console.log('this.isPlaying: ' + this.isPlaying)
 
-        if (!this.isPlaying || !channel) return true
+        if (!this.isPlaying || !channel || !this.totalSteps) return true
 
         const samplesPerStep = (sampleRate * 60) / this.bpm / this.stepsPerBeat
 
