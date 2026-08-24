@@ -13,15 +13,26 @@ export function useBeatMachine_2() {
     const state = useAudioEngineStore((state) => state)
 
     useEffect(() => {
-        state.actions.initAudio()
+        let cancelled = false
+
+        state.actions.initAudio().catch((err) => {
+            if (!cancelled) {
+                console.error('Failed to init audio:', err)
+            }
+        })
+
         state.workletNode?.port.postMessage({
             type: 'INIT_GRID',
             payload: {
                 grid: INITIAL_GRID,
                 gridLength: INITIAL_GRID.kick?.length,
-                stepsPerBeat: 4, // or whatever your default is
+                stepsPerBeat: 4,
             },
         })
+
+        return () => {
+            cancelled = true
+        }
     }, [state.actions, state.workletNode?.port])
 
     const startAudio = async () => {

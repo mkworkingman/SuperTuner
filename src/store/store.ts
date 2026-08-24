@@ -32,6 +32,7 @@ export const useAudioEngineStore = create<StoreState>()(
 
                     let { ctx, workletNode, loadedModules } = get()
                     ctx ??= new (window.AudioContext || window.webkitAudioContext)()
+                    ctx.suspend()
 
                     try {
                         if (!loadedModules.has('/worklets/beatProcessor.js')) {
