@@ -54,6 +54,7 @@ class BeatProcessor extends AudioWorkletProcessor {
     }
 
     process(_, outputs) {
+        // TODO: use currentTime to suspend after 5 seconds
         const output = outputs[0]
         const channel = output[0]
 
