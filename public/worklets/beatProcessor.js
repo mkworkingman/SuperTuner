@@ -18,8 +18,9 @@ class BeatProcessor extends AudioWorkletProcessor {
         }
 
         this.grid = {}
-
         this.activeVoices = []
+
+        this.lastActiveTime = null
 
         this.port.onmessage = (e) => {
             const { type, payload } = e.data
@@ -32,6 +33,7 @@ class BeatProcessor extends AudioWorkletProcessor {
                     this.sampleCount = 0
                     this.currentStep = 0
                     this.activeVoices = []
+                    this.lastActiveTime = currentTime
                     break
                 case 'SET_BPM':
                     this.bpm = payload
@@ -60,7 +62,12 @@ class BeatProcessor extends AudioWorkletProcessor {
 
         console.log('this.isPlaying: ' + this.isPlaying)
 
-        if (!this.isPlaying || !channel || !this.totalSteps) return true
+        if (!this.isPlaying || !channel || !this.totalSteps) {
+            if (this.lastActiveTime && currentTime - this.lastActiveTime >= 5) {
+                this.port.postMessage({ type: 'AUTO_SUSPEND' })
+            }
+            return true
+        }
 
         const samplesPerStep = (sampleRate * 60) / this.bpm / this.stepsPerBeat
 

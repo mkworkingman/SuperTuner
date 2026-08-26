@@ -36,16 +36,12 @@ export function useBeatMachine_2() {
                     })
                     console.log('READY')
                     break
-                // TODO: connect STARTED with Zustand, audio, js processor
-                // case 'STARTED':
-                //     state.actions.setIsPlaying(true)
-                //     break
-                // case 'STOPPED':
-                //     state.actions.setIsPlaying(false)
-                //     break
-                // case 'TICK':
-                //     state.actions.setCurrentStep(e.data.step)
-                //     break
+                case 'AUTO_SUSPEND':
+                    state.actions.suspendAudio()
+                    break
+                case 'TICK':
+                    console.log(e.data.step)
+                    break
             }
         }
 
@@ -59,13 +55,13 @@ export function useBeatMachine_2() {
     }, [state.actions, state.workletNode?.port])
 
     const startAudio = async () => {
+        await state.actions.runAudio()
         state.workletNode?.port.postMessage({ type: 'START' })
-        await state.actions.resumeAudio()
     }
 
     const stopAudio = async () => {
+        state.actions.stopAudio()
         state.workletNode?.port.postMessage({ type: 'STOP' })
-        await state.actions.suspendAudio()
     }
 
     return {

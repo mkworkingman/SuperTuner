@@ -6,11 +6,11 @@ interface StoreState {
     loadedModules: Set<string>
     isRunning: boolean
     status: 'idle' | 'pending' | 'success' | 'failure'
-    autoSuspendTimer: ReturnType<typeof setTimeout> | null
     actions: {
         initAudio: () => Promise<void>
-        resumeAudio: () => Promise<void>
-        suspendAudio: () => Promise<void>
+        runAudio: () => Promise<void>
+        stopAudio: () => void
+        suspendAudio: () => void
     }
 }
 
@@ -22,7 +22,6 @@ export const useAudioEngineStore = create<StoreState>()(
             loadedModules: new Set<string>(),
             isRunning: false,
             status: 'idle',
-            autoSuspendTimer: null,
 
             actions: {
                 async initAudio() {
@@ -50,9 +49,6 @@ export const useAudioEngineStore = create<StoreState>()(
                             workletNode,
                             loadedModules,
                             status: 'success',
-                            autoSuspendTimer: setTimeout(() => {
-                                ctx.suspend()
-                            }, 5000),
                         })
                     } catch (error) {
                         console.error(error)
@@ -60,28 +56,26 @@ export const useAudioEngineStore = create<StoreState>()(
                     }
                 },
 
-                async resumeAudio() {
-                    const { ctx, status, autoSuspendTimer } = get()
+                async runAudio() {
+                    const { ctx, status } = get()
                     if (status !== 'success') return
 
-                    if (autoSuspendTimer) {
-                        clearTimeout(autoSuspendTimer)
-                    }
-
                     if (ctx?.state === 'suspended') await ctx.resume()
-                    set({ isRunning: true, autoSuspendTimer: null })
+                    set({ isRunning: true })
                 },
 
-                async suspendAudio() {
+                stopAudio() {
                     const { ctx, status } = get()
                     if (ctx?.state !== 'running' || status !== 'success') return
 
                     set({
                         isRunning: false,
-                        autoSuspendTimer: setTimeout(() => {
-                            ctx.suspend()
-                        }, 5000),
                     })
+                },
+
+                suspendAudio() {
+                    const { ctx } = get()
+                    ctx?.suspend()
                 },
             },
         }) satisfies StoreState,
