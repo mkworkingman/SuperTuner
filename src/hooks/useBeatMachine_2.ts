@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { BeatGrid } from '@/types'
 import { useAudioEngineStore } from '@/store/store'
 
@@ -11,6 +11,9 @@ const INITIAL_GRID: BeatGrid = {
 
 export function useBeatMachine_2() {
     const state = useAudioEngineStore((state) => state)
+    const currentStepRef = useRef(0)
+    const stepIndicatorRef = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
         let cancelled = false
 
@@ -41,6 +44,17 @@ export function useBeatMachine_2() {
                     break
                 case 'TICK':
                     console.log(e.data.step)
+
+                    const prevStep = currentStepRef.current
+                    currentStepRef.current = e.data.step
+                    if (stepIndicatorRef.current) {
+                        stepIndicatorRef.current
+                            .querySelector(`[data-step="${prevStep}"]`)
+                            ?.removeAttribute('data-active')
+                        stepIndicatorRef.current
+                            .querySelector(`[data-step="${e.data.step}"]`)
+                            ?.setAttribute('data-active', 'true')
+                    }
                     break
             }
         }
@@ -67,5 +81,6 @@ export function useBeatMachine_2() {
     return {
         startAudio,
         stopAudio,
+        stepIndicatorRef,
     }
 }

@@ -1,0 +1,7 @@
+.cells div {
+    border: 2px solid black;
+
+    &[data-active='true'] {
+        background: white;
+    }
+}
