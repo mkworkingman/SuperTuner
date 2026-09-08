@@ -1,13 +1,14 @@
 import { create } from 'zustand'
+import { WorkletUrl } from '@/types'
 
 interface StoreState {
     ctx: AudioContext | null
     workletNode: AudioWorkletNode | null
-    loadedModules: Set<string>
+    loadedModules: Set<WorkletUrl>
     isRunning: boolean
     status: 'idle' | 'pending' | 'success' | 'failure'
     actions: {
-        initAudio: () => Promise<void>
+        initAudio: (moduleUrl: WorkletUrl) => Promise<void>
         runAudio: () => Promise<void>
         stopAudio: () => void
         suspendAudio: () => void
@@ -19,12 +20,12 @@ export const useAudioEngineStore = create<StoreState>()(
         ({
             ctx: null,
             workletNode: null,
-            loadedModules: new Set<string>(),
+            loadedModules: new Set<WorkletUrl>(),
             isRunning: false,
             status: 'idle',
 
             actions: {
-                async initAudio() {
+                async initAudio(moduleUrl) {
                     const status = get().status
                     if (status === 'pending' || status === 'success') return
                     set({ status: 'pending' })
@@ -34,9 +35,9 @@ export const useAudioEngineStore = create<StoreState>()(
                     ctx.suspend()
 
                     try {
-                        if (!loadedModules.has('/worklets/beatProcessor.js')) {
-                            await ctx.audioWorklet.addModule('/worklets/beatProcessor.js')
-                            loadedModules = new Set(loadedModules).add('/worklets/beatProcessor.js')
+                        if (!loadedModules.has(moduleUrl)) {
+                            await ctx.audioWorklet.addModule(moduleUrl)
+                            loadedModules = new Set(loadedModules).add(moduleUrl)
                         }
 
                         if (!workletNode) {

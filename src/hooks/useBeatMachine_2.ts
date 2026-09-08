@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { BeatGrid } from '@/types'
+import { WORKLET_MODULE_URLS } from '@/consts'
 import { useAudioEngineStore } from '@/store/store'
 
 const INITIAL_GRID: BeatGrid = {
@@ -17,7 +18,7 @@ export function useBeatMachine_2() {
     useEffect(() => {
         let cancelled = false
 
-        state.actions.initAudio().catch((err) => {
+        state.actions.initAudio(WORKLET_MODULE_URLS.beat).catch((err) => {
             if (!cancelled) {
                 console.error('Failed to init audio:', err)
             }
