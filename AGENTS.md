@@ -37,3 +37,10 @@ be coupled to a single hook** like `useBeatMachine_2` - no worklet URLs,
 processor names, tool message types, or graph topology in it. Adding a tool
 means writing a `NodeSpec` and a hook, not editing the store. The skill has
 the full rule.
+
+## Zustand
+
+Before writing or changing anything in `src/store/`, any hook that reads a
+store, or any component that subscribes to state, invoke the `zustand` skill.
+Selector rules changed in v5 and the `actions` object has invariants that are
+easy to break silently.
