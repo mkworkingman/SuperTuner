@@ -21,3 +21,12 @@ Compiler affects: this project sets `reactCompiler: true`, so check before
 hand-writing `useMemo`/`useCallback`.
 
 Skip it for stable basics (`useState`, props, JSX) and for trivial edits.
+
+## Web Audio
+
+Before touching any `AudioContext`, `AudioWorkletNode`, or `public/worklets/*`
+code, invoke the `audio-worklet` skill. The lifecycle and threading rules are
+non-obvious — don't work from memory.
+
+Files in `public/worklets/` are served raw, not bundled: plain JS only, no
+TypeScript, no `import`, no `@/` aliases.
