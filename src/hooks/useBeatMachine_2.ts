@@ -11,20 +11,21 @@ const INITIAL_GRID: BeatGrid = {
 }
 
 export function useBeatMachine_2() {
-    const state = useAudioEngineStore((state) => state)
+    const actions = useAudioEngineStore((state) => state.actions)
+    const workletNode = useAudioEngineStore((state) => state.workletNode)
     const currentStepRef = useRef(0)
     const stepIndicatorRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         let cancelled = false
 
-        state.actions.initAudio(WORKLET_MODULE_URLS.beat).catch((err) => {
+        actions.initAudio(WORKLET_MODULE_URLS.beat).catch((err) => {
             if (!cancelled) {
                 console.error('Failed to init audio:', err)
             }
         })
 
-        const port = state.workletNode?.port
+        const port = workletNode?.port
         if (!port) return
 
         const handleMessage = (e: MessageEvent) => {
@@ -41,7 +42,7 @@ export function useBeatMachine_2() {
                     console.log('READY')
                     break
                 case 'AUTO_SUSPEND':
-                    state.actions.suspendAudio()
+                    actions.suspendAudio()
                     break
                 case 'TICK':
                     console.log(e.data.step)
@@ -67,16 +68,16 @@ export function useBeatMachine_2() {
             cancelled = true
             port.removeEventListener('message', handleMessage)
         }
-    }, [state.actions, state.workletNode?.port])
+    }, [actions, workletNode])
 
     const startAudio = async () => {
-        await state.actions.runAudio()
-        state.workletNode?.port.postMessage({ type: 'START' })
+        await actions.runAudio()
+        workletNode?.port.postMessage({ type: 'START' })
     }
 
     const stopAudio = async () => {
-        state.actions.stopAudio()
-        state.workletNode?.port.postMessage({ type: 'STOP' })
+        actions.stopAudio()
+        workletNode?.port.postMessage({ type: 'STOP' })
     }
 
     return {
