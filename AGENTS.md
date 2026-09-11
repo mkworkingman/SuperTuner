@@ -6,9 +6,47 @@ Before any Next.js work, find and read the relevant doc in `node_modules/next/di
 
 <!-- END:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+This version has breaking changes, so heed deprecation notices in those docs.
+`typedRoutes: true` is on: every `href` must be a typed `Route`.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+# Super Tuner
+
+Browser music tools — tuner, metronome, beat machine, note/interval/chord
+ear training — built on Next.js 16, React 19, Zustand 5 and Web Audio.
+Deployed to Vercel.
+
+## Scope: work only on the beat machine rewrite
+
+The app is being rewritten onto the shared audio engine. Only these files are
+current — work in them, and copy patterns only from them:
+
+- `src/hooks/useBeatMachine_2.ts` — the reference tool hook
+- `src/app/(tools)/beat2/` — its page (not linked in the nav yet)
+- `src/store/store.ts` — the shared audio engine
+- `public/worklets/beatProcessor.js`, `src/consts/worklets.ts`, `src/types/`
+
+Everything else tool-related is outdated: `useBeatMachine`, `useMetronome`,
+`useMetronome_2`, `useTuner`, `src/lib/audioContext*.ts`, `src/wasm/`,
+`BeatMachineGrid`, and the `beat`, `metronome`, `tuner` and `guess` routes.
+Don't copy their patterns, don't extend them, and don't edit or delete them
+unless asked. A `_2` suffix alone doesn't mean current — `useMetronome_2` is
+outdated.
+
+The outdated hooks still load `beatProcessor.js`, so changing its port
+messages breaks the old `beat` and `metronome` routes too.
+
+## Layout
+
+- `src/app/(tools)/<tool>/page.tsx` — one route per tool; nav entries live in
+  `src/consts/route_config.ts`
+- `src/hooks/` — one hook per tool, owning that tool's audio graph
+- `src/components/ui/`, `src/components/layout/` — shared UI
+- `public/worklets/` — AudioWorklet processors; `public/sounds/` — samples
+
+## Checks
+
+There are no tests. Before finishing, run `npm run ts` and `npm run lint`,
+plus `npm run lint:scss` if you touched SCSS. Formatting follows `.prettierrc`.
 
 ## React
 
