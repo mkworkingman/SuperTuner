@@ -4,7 +4,7 @@ import { WorkletUrl } from '@/types'
 interface StoreState {
     ctx: AudioContext | null
     workletNode: AudioWorkletNode | null
-    loadedModules: Set<WorkletUrl>
+    loadedModules: Set<WorkletUrl[0]>
     isRunning: boolean
     status: 'idle' | 'pending' | 'success' | 'failure'
     actions: {
@@ -20,7 +20,7 @@ export const useAudioEngineStore = create<StoreState>()(
         ({
             ctx: null,
             workletNode: null,
-            loadedModules: new Set<WorkletUrl>(),
+            loadedModules: new Set<WorkletUrl[0]>(),
             isRunning: false,
             status: 'idle',
 
@@ -35,13 +35,13 @@ export const useAudioEngineStore = create<StoreState>()(
                     ctx.suspend()
 
                     try {
-                        if (!loadedModules.has(moduleUrl)) {
-                            await ctx.audioWorklet.addModule(moduleUrl)
-                            loadedModules = new Set(loadedModules).add(moduleUrl)
+                        if (!loadedModules.has(moduleUrl[0])) {
+                            await ctx.audioWorklet.addModule(moduleUrl[0])
+                            loadedModules = new Set(loadedModules).add(moduleUrl[0])
                         }
 
                         if (!workletNode) {
-                            workletNode = new AudioWorkletNode(ctx, 'beat-processor')
+                            workletNode = new AudioWorkletNode(ctx, moduleUrl[1])
                             workletNode.connect(ctx.destination)
                         }
 
