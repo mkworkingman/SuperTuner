@@ -157,7 +157,8 @@ the action entirely (see above).
 
 ## Keep the store generic
 
-`src/store/store.ts` is the shared audio engine and must not learn about any
-one tool. No worklet URLs, processor names, message types, or graph topology in
-it. See the `audio-worklet` skill for the full rule - it governs what may enter
-this store at all, and this skill governs how what's there is consumed.
+`src/store/store.ts` is the shared audio engine - one context and one worklet
+node reused by every tool - and must not learn about any one tool. No tool
+message types, tool config, or tool listeners in it. See the `audio-worklet`
+skill for the full rule - it governs what may enter this store at all, and this
+skill governs how what's there is consumed.

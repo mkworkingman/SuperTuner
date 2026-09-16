@@ -31,12 +31,12 @@ non-obvious — don't work from memory.
 Files in `public/worklets/` are served raw, not bundled: plain JS only, no
 TypeScript, no `import`, no `@/` aliases.
 
-`src/store/store.ts` is the shared audio engine: one AudioContext plus one
-worklet node per tool, keyed by source id. **It must stay generic and must NOT
-be coupled to a single hook** like `useBeatMachine_2` - no worklet URLs,
-processor names, tool message types, or graph topology in it. Adding a tool
-means writing a `NodeSpec` and a hook, not editing the store. The skill has
-the full rule.
+`src/store/store.ts` is the shared audio engine: **one AudioContext and one
+AudioWorkletNode for the whole tab, reused by every tool.** Tools never create
+their own context or node - they reconfigure the shared node over its port, and
+the context is suspended and resumed, never closed. Tool message types, config,
+and listeners stay in the tool's hook, not the store. The skill has the full
+rule.
 
 ## Zustand
 
