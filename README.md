@@ -25,3 +25,6 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 1. Suspend after 10 seconds of waiting
 2. Polyrhythm
 3. If no access to mic, then ask again
+
+Bigger feature ideas (singing practice, polyrhythm with animation) are written
+up in [IDEAS.md](./IDEAS.md).
