@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { BeatGrid } from '@/types'
-import { useAudioEngineStore } from '@/store/store'
+import { useAudioActions, useWorkletNode } from '@/store/store'
 
 const INITIAL_GRID: BeatGrid = {
     kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
@@ -10,8 +10,8 @@ const INITIAL_GRID: BeatGrid = {
 }
 
 export function useBeatMachine_2() {
-    const actions = useAudioEngineStore((state) => state.actions)
-    const workletNode = useAudioEngineStore((state) => state.workletNode)
+    const actions = useAudioActions()
+    const workletNode = useWorkletNode()
     const currentStepRef = useRef(0)
     const stepIndicatorRef = useRef<HTMLDivElement>(null)
 
@@ -39,9 +39,6 @@ export function useBeatMachine_2() {
                         },
                     })
                     console.log('READY')
-                    break
-                case 'AUTO_SUSPEND':
-                    actions.suspendAudio()
                     break
                 case 'TICK':
                     console.log(e.data.step)

@@ -14,8 +14,9 @@ interface StoreState {
 }
 
 let initPromise: Promise<void> | null = null
+let moduleLoaded = false
 
-export const useAudioEngineStore = create<StoreState>()(
+const useAudioEngineStore = create<StoreState>()(
     (set, get) =>
         ({
             ctx: null,
@@ -28,15 +29,31 @@ export const useAudioEngineStore = create<StoreState>()(
                     initPromise ??= (async () => {
                         set({ status: 'pending' })
 
-                        let { ctx } = get()
+                        let { ctx, workletNode } = get()
                         ctx ??= new (window.AudioContext || window.webkitAudioContext)()
                         set({ ctx })
                         if (ctx.state === 'running') await ctx.suspend()
 
-                        await ctx.audioWorklet.addModule('/worklets/processor2.js')
+                        if (!moduleLoaded) {
+                            await ctx.audioWorklet.addModule('/worklets/processor2.js')
+                            moduleLoaded = true
+                        }
 
-                        const workletNode = new AudioWorkletNode(ctx, 'beat-processor')
-                        workletNode.connect(ctx.destination)
+                        if (!workletNode) {
+                            workletNode = new AudioWorkletNode(ctx, 'audio-processor')
+                            workletNode.connect(ctx.destination)
+
+                            // Engine messages: handled here, once, whichever tool is mounted.
+                            workletNode.port.addEventListener('message', (e: MessageEvent) => {
+                                if (e.data?.type === 'AUTO_SUSPEND') get().actions.suspendAudio()
+                            })
+                            workletNode.port.start()
+
+                            workletNode.addEventListener('processorerror', (e) => {
+                                console.error('Worklet processor crashed:', e)
+                                set({ status: 'failure', isRunning: false })
+                            })
+                        }
 
                         set({ workletNode, status: 'success' })
                     })().catch((error) => {
@@ -66,9 +83,15 @@ export const useAudioEngineStore = create<StoreState>()(
                 },
 
                 suspendAudio() {
-                    const { ctx } = get()
+                    const { ctx, isRunning } = get()
+                    // One context for the whole tab: never pull it out from under a running tool.
+                    if (isRunning) return
                     ctx?.suspend()
                 },
             },
         }) satisfies StoreState,
 )
+
+export const useWorkletNode = () => useAudioEngineStore((s) => s.workletNode)
+export const useAudioStatus = () => useAudioEngineStore((s) => s.status)
+export const useAudioActions = () => useAudioEngineStore((s) => s.actions)
