@@ -15,6 +15,8 @@ interface StoreState {
     }
 }
 
+let initPromise: Promise<void> | null = null
+
 export const useAudioEngineStore = create<StoreState>()(
     (set, get) =>
         ({
@@ -25,16 +27,15 @@ export const useAudioEngineStore = create<StoreState>()(
             status: 'idle',
 
             actions: {
-                async initAudio(moduleUrl) {
-                    const status = get().status
-                    if (status === 'pending' || status === 'success') return
-                    set({ status: 'pending' })
+                initAudio(moduleUrl) {
+                    initPromise ??= (async () => {
+                        set({ status: 'pending' })
 
-                    let { ctx, workletNode, loadedModules } = get()
-                    ctx ??= new (window.AudioContext || window.webkitAudioContext)()
-                    ctx.suspend()
+                        let { ctx, workletNode, loadedModules } = get()
+                        ctx ??= new (window.AudioContext || window.webkitAudioContext)()
+                        set({ ctx })
+                        if (ctx.state === 'running') await ctx.suspend()
 
-                    try {
                         if (!loadedModules.has(moduleUrl[0])) {
                             await ctx.audioWorklet.addModule(moduleUrl[0])
                             loadedModules = new Set(loadedModules).add(moduleUrl[0])
@@ -51,10 +52,13 @@ export const useAudioEngineStore = create<StoreState>()(
                             loadedModules,
                             status: 'success',
                         })
-                    } catch (error) {
+                    })().catch((error) => {
                         console.error(error)
                         set({ status: 'failure' })
-                    }
+                        initPromise = null
+                    })
+
+                    return initPromise
                 },
 
                 async runAudio() {
