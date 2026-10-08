@@ -39,6 +39,18 @@ Legacy files:
 
 If a task seems to need a change outside the active files, stop and ask first.
 
+## Subagents
+
+Project agents live in `.claude/agents/`. Use them as follows, without being
+asked:
+
+- After editing any active file, run `checker` and `worklet-reviewer` in
+  parallel and report their findings before finishing.
+- Before porting a legacy tool, run `legacy-miner` on it first.
+- For any Next.js API question, ask `next-docs` instead of answering from memory.
+- `browser-tester` runs only when explicitly asked (it needs the dev server and
+  Chrome).
+
 ## React
 
 `node_modules/react` ships no docs, so for React itself use Context7: call
