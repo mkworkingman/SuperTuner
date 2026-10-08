@@ -10,6 +10,35 @@ Before any Next.js work, find and read the relevant doc in `node_modules/next/di
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 
+## Scope: work only in the active files
+
+The audio code is mid-migration. Work only in these files:
+
+- `src/store/store.ts`
+- `public/worklets/processor2.js`
+- `src/hooks/useBeatMachine_2.ts`
+- `src/app/(tools)/beat2/page.tsx`
+
+Everything else that touches audio is **legacy**: other tools, hooks,
+processors and audio helpers. This includes:
+
+- `src/hooks/useBeatMachine.ts`, `src/hooks/useMetronome.ts`,
+  `src/hooks/useMetronome_2.ts`, `src/hooks/useTuner.ts`
+- `public/worklets/beatProcessor.js`, `public/worklets/pitchProcessor.js`
+- `src/lib/audioContext.ts`, `src/lib/audioContext_2.ts`
+- the other tool pages: `src/app/(tools)/beat/page.tsx`,
+  `src/app/(tools)/metronome/page.tsx`, `src/app/(tools)/tuner/page.tsx`
+
+Legacy files:
+
+- Don't edit, refactor or "fix" them, and don't import from them in the active
+  files.
+- **Never delete them**, even when they look dead or duplicated.
+- Read them only as a reference, for example to see how the tuner did pitch
+  detection.
+
+If a task seems to need a change outside the active files, stop and ask first.
+
 ## React
 
 `node_modules/react` ships no docs, so for React itself use Context7: call
