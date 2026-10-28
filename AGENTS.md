@@ -15,8 +15,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 The audio code is mid-migration. Work only in these files:
 
 - `src/store/store.ts`
-- `public/worklets/processor2.js`
-- `src/hooks/useBeatMachine_2.ts`
+- `public/worklets/processor.js`
+- `src/hooks/useBeatMachine.ts`
 - `src/app/(tools)/beat2/page.tsx`
 
 Everything else that touches audio is **legacy**: other tools, hooks,

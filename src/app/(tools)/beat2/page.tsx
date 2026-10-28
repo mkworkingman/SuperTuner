@@ -1,14 +1,13 @@
 'use client'
-import { useBeatMachine } from '@/legacy/hooks/useBeatMachine'
 import { CustomButton, InputRange } from '@/components/ui'
 import BeatMachineGrid from '@/components/BeatMachineGrid'
 import { TOOLS_CLASSNAME } from '@/consts'
 import { BeatGrid } from '@/types'
-import { useBeatMachine_2 } from '@/hooks/useBeatMachine_2'
+import { useBeatMachine } from '@/hooks/useBeatMachine'
 import style from './style.module.scss'
 
 export default function BeatMachine() {
-    const { startAudio, stopAudio, stepIndicatorRef } = useBeatMachine_2()
+    const { startAudio, stopAudio, stepIndicatorRef } = useBeatMachine()
 
     return (
         <div className={`bg-app-beat ${TOOLS_CLASSNAME}`}>

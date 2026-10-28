@@ -9,7 +9,7 @@ const INITIAL_GRID: BeatGrid = {
     crash: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 }
 
-export function useBeatMachine_2() {
+export function useBeatMachine() {
     const actions = useAudioActions()
     const workletNode = useWorkletNode()
     const currentStepRef = useRef(0)

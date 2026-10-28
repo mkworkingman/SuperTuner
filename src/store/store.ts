@@ -35,7 +35,7 @@ const useAudioEngineStore = create<StoreState>()(
                         if (ctx.state === 'running') await ctx.suspend()
 
                         if (!moduleLoaded) {
-                            await ctx.audioWorklet.addModule('/worklets/processor2.js')
+                            await ctx.audioWorklet.addModule('/worklets/processor.js')
                             moduleLoaded = true
                         }
 

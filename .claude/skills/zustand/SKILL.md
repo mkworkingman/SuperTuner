@@ -93,7 +93,7 @@ This works because of a property that must be actively protected: **`actions`
 is constructed once and never replaced by `set`.** So `(s) => s.actions` is an
 atomic pick whose identity never changes - destructuring it costs zero extra
 renders, needs no `useShallow`, and the functions are safe to list in
-`useEffect` deps. `src/hooks/useBeatMachine_2.ts` already relies on this.
+`useEffect` deps. `src/hooks/useBeatMachine.ts` already relies on this.
 
 What breaks that guarantee - do none of these:
 
