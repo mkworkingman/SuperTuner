@@ -74,12 +74,8 @@ const useAudioEngineStore = create<StoreState>()(
                 },
 
                 stopAudio() {
-                    const { ctx, status } = get()
-                    if (ctx?.state !== 'running' || status !== 'success') return
-
-                    set({
-                        isRunning: false,
-                    })
+                    // Always clear it: a stuck isRunning blocks suspendAudio for the whole tab.
+                    set({ isRunning: false })
                 },
 
                 suspendAudio() {

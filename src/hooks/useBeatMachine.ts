@@ -8,6 +8,8 @@ const INITIAL_GRID: BeatGrid = {
     hats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     crash: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 }
+const INITIAL_BPM = 120
+const STEPS_PER_BEAT = 4
 
 export function useBeatMachine() {
     const actions = useAudioActions()
@@ -29,17 +31,6 @@ export function useBeatMachine() {
 
         const handleMessage = (e: MessageEvent) => {
             switch (e.data.type) {
-                case 'READY':
-                    port.postMessage({
-                        type: 'INIT_GRID',
-                        payload: {
-                            grid: INITIAL_GRID,
-                            gridLength: INITIAL_GRID.kick?.length,
-                            stepsPerBeat: 4,
-                        },
-                    })
-                    console.log('READY')
-                    break
                 case 'TICK':
                     console.log(e.data.step)
 
@@ -60,8 +51,23 @@ export function useBeatMachine() {
         port.addEventListener('message', handleMessage)
         port.start()
 
+        // The node is shared and READY fires once per tab: send the full config
+        // on every mount, the processor may still hold another tool's state.
+        port.postMessage({
+            type: 'INIT_GRID',
+            payload: {
+                grid: INITIAL_GRID,
+                gridLength: INITIAL_GRID.kick?.length,
+                stepsPerBeat: STEPS_PER_BEAT,
+            },
+        })
+        port.postMessage({ type: 'SET_BPM', payload: INITIAL_BPM })
+
         return () => {
             cancelled = true
+            port.postMessage({ type: 'STOP' })
+            actions.stopAudio()
+            actions.suspendAudio()
             port.removeEventListener('message', handleMessage)
         }
     }, [actions, workletNode])
