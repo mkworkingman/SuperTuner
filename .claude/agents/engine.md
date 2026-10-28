@@ -23,6 +23,9 @@ one rule you check there is that `resume()` (via `runAudio`) is reached only
 from a user-gesture handler such as a click. Don't review the page otherwise:
 no findings about its layout, styling, or React code.
 
+You may also **read** everything in `tests/` for task 6. The tests and their
+fakes are not engine code: report gaps and misleading tests, not style.
+
 Every other audio file is legacy (see the "Scope" section of `AGENTS.md`). You
 may read legacy files as a reference, for example to see how the tuner did
 pitch detection. Never report them as things to fix and never suggest editing
@@ -146,6 +149,16 @@ change.
 
 If task 5 is requested without a described change, skip it and say "task 5
 skipped: no change described". Don't invent one.
+
+### 6. Test coverage
+
+Read `tests/`. For each rule in task 2 and each message in task 1, say whether a
+test covers it: covered (`test file:line`), partial, or none. Flag tests that
+pass for the wrong reason, for example a fake whose timing hides a race. Don't
+run the tests and don't write new ones.
+
+If the brief includes test output, use it to say which covered rules currently
+pass or fail. Without it, report coverage only.
 
 ## Output
 
