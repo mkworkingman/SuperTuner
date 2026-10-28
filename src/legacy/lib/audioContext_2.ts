@@ -14,7 +14,7 @@ const audioEngine = {
     },
 
     async getAudioWorkletNode(): Promise<AudioWorkletNode> {
-        const ctx = await this.getAudioContext('/worklets/beatProcessor.js')
+        const ctx = await this.getAudioContext('/legacy/worklets/beatProcessor.js')
         if (!this.audioWorkletNode) {
             this.audioWorkletNode = new AudioWorkletNode(ctx, 'beat-processor')
             this.audioWorkletNode.connect(ctx.destination)

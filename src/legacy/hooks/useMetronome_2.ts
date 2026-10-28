@@ -45,7 +45,7 @@ export function useMetronome() {
             try {
                 if (!audioCtxRef.current) {
                     audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-                    await audioCtxRef.current.audioWorklet.addModule('/worklets/beatProcessor.js')
+                    await audioCtxRef.current.audioWorklet.addModule('/legacy/worklets/beatProcessor.js')
                 }
 
                 const audioCtx = audioCtxRef.current!

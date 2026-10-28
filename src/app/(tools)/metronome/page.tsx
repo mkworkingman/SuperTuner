@@ -1,5 +1,5 @@
 'use client'
-import { useMetronome } from '@/hooks/useMetronome'
+import { useMetronome } from '@/legacy/hooks/useMetronome'
 import { InputRange } from '@/components/ui'
 import { TOOLS_CLASSNAME } from '@/consts'
 

@@ -1,5 +1,5 @@
 'use client'
-import { useBeatMachine } from '@/hooks/useBeatMachine'
+import { useBeatMachine } from '@/legacy/hooks/useBeatMachine'
 import { CustomButton, InputRange } from '@/components/ui'
 import BeatMachineGrid from '@/components/BeatMachineGrid'
 import { TOOLS_CLASSNAME } from '@/consts'

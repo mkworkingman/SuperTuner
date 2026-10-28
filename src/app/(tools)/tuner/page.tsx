@@ -1,5 +1,5 @@
 'use client'
-import { useTuner } from '@/hooks/useTuner'
+import { useTuner } from '@/legacy/hooks/useTuner'
 import { A4Toggle, AccidentalToggle, NoteSystemToggle } from '@/components/tuner'
 import { useState } from 'react'
 import { AccidentalMode, NoteSystem } from '@/types'

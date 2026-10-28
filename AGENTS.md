@@ -22,10 +22,8 @@ The audio code is mid-migration. Work only in these files:
 Everything else that touches audio is **legacy**: other tools, hooks,
 processors and audio helpers. This includes:
 
-- `src/hooks/useBeatMachine.ts`, `src/hooks/useMetronome.ts`,
-  `src/hooks/useMetronome_2.ts`, `src/hooks/useTuner.ts`
-- `public/worklets/beatProcessor.js`, `public/worklets/pitchProcessor.js`
-- `src/lib/audioContext.ts`, `src/lib/audioContext_2.ts`
+- everything in `src/legacy/` (hooks and audio helpers)
+- everything in `public/legacy/` (worklet processors)
 - the other tool pages: `src/app/(tools)/beat/page.tsx`,
   `src/app/(tools)/metronome/page.tsx`, `src/app/(tools)/tuner/page.tsx`
 
