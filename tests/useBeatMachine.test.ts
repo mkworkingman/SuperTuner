@@ -82,6 +82,91 @@ describe('F1: leaving beat2 stops the audio', () => {
     })
 })
 
+describe('effect dependencies: [actions, workletNode]', () => {
+    it('re-runs when the node appears: nothing on the first render, then listener and config', async () => {
+        renderHook(() => useBeatMachine())
+        // initAudio is async: the first render runs with workletNode === null.
+        expect(fakeAudio.nodes).toHaveLength(0)
+
+        await waitFor(() => expect(node().port.listeners.size).toBe(2))
+        expect(node().port.posted).toEqual(expect.arrayContaining(FULL_CONFIG))
+    })
+
+    it('does not re-run on a plain re-render: no STOP, no config resend, same listener', async () => {
+        const { rerender } = await mount()
+        await settle()
+        node().port.posted.length = 0
+        const addCalls = node().port.addEventListener.mock.calls.length
+
+        rerender()
+        rerender()
+        await settle()
+
+        expect(node().port.posted).toEqual([])
+        expect(node().port.addEventListener.mock.calls.length).toBe(addCalls)
+        expect(node().port.listeners.size).toBe(2)
+    })
+
+    it('does not stop playback when the hook re-renders while playing', async () => {
+        const { result, rerender } = await mount()
+        await act(() => result.current.startAudio())
+        ctx().suspend.mockClear()
+        node().port.posted.length = 0
+
+        rerender()
+        await settle()
+
+        expect(node().port.types()).not.toContain('STOP')
+        expect(ctx().suspend).not.toHaveBeenCalled()
+        expect(ctx().state).toBe('running')
+    })
+
+    it('keeps the same actions object across renders and state changes', async () => {
+        const { useAudioActions } = await import('@/store/store')
+        const { result, rerender } = renderHook(() => useAudioActions())
+        const first = result.current
+
+        await act(() => first.initAudio())
+        await act(() => first.runAudio())
+        act(() => first.stopAudio())
+        rerender()
+
+        expect(result.current).toBe(first)
+    })
+})
+
+describe('StrictMode (dev): mount, cleanup, mount', () => {
+    it('ends with one context, one node, the hook listening and the config sent last', async () => {
+        renderHook(() => useBeatMachine(), { reactStrictMode: true })
+        await waitFor(() => expect(node().port.listeners.size).toBe(2))
+        await settle()
+
+        expect(fakeAudio.contexts).toHaveLength(1)
+        expect(fakeAudio.nodes).toHaveLength(1)
+
+        const types = node().port.types()
+        expect(types.lastIndexOf('INIT_GRID')).toBeGreaterThan(types.lastIndexOf('STOP'))
+        expect(types.lastIndexOf('SET_BPM')).toBeGreaterThan(types.lastIndexOf('STOP'))
+    })
+
+    it('still plays after the double effect, and still tears down on unmount', async () => {
+        const { result, unmount } = renderHook(() => useBeatMachine(), { reactStrictMode: true })
+        await waitFor(() => expect(node().port.listeners.size).toBe(2))
+        await settle()
+
+        await act(() => result.current.startAudio())
+        expect(ctx().state).toBe('running')
+
+        node().port.posted.length = 0
+        unmount()
+        await settle()
+
+        expect(node().port.types()).toContain('STOP')
+        expect(ctx().state).toBe('suspended')
+        expect(node().port.listeners.size).toBe(1)
+    })
+})
+
 describe('F2: config is sent on every mount, not driven by READY', () => {
     it('sends the full config on first mount', async () => {
         await mount()
